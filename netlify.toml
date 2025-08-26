@@ -10,9 +10,15 @@
 [build.environment]
   NODE_VERSION = "20"
   NPM_FLAGS = "--legacy-peer-deps"
-  GEMINI_API_KEY = "${GEMINI_API_KEY}"
 
 [[redirects]]
   from = "/*"
   to = "/index.html"
+  status = 200
+
+# This rule is essential for Netlify Functions to work.
+# It rewrites any request starting with /api/ to the corresponding function path.
+[[redirects]]
+  from = "/api/:path"
+  to = "/.netlify/functions/:path"
   status = 200
