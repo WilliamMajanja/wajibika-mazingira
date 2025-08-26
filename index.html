@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wajibika Mazingira</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'brand-green': '#059669', // Emerald-600
+              'brand-green-light': '#10B981', // Emerald-500
+              'brand-dark': '#1f2937', // Gray-800
+              'brand-dark-light': '#374151', // Gray-700
+              'brand-light': '#f9fafb', // Gray-50
+            },
+          },
+        },
+      }
+    </script>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@18.3.1",
+    "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
+    "react-router-dom": "https://esm.sh/react-router-dom@6.24.1",
+    "@auth0/auth0-react": "https://esm.sh/@auth0/auth0-react@2.4.0",
+    "@netlify/functions": "https://esm.sh/@netlify/functions@^4.2.1",
+    "@google/genai": "https://esm.sh/@google/genai@^1.13.0",
+    "react/": "https://esm.sh/react@^19.1.1/",
+    "@neondatabase/serverless": "https://esm.sh/@neondatabase/serverless@^1.0.1",
+    "ws": "https://esm.sh/ws@^8.18.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.1.1/",
+    "vite": "https://esm.sh/vite@^7.1.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.0.0"
+  }
+}
+</script>
+    <script type="module" src="/src/index.tsx"></script>
+</head>
+  <body class="bg-brand-light">
+    <div id="root"></div>
+  </body>
+</html>
