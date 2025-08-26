@@ -1,4 +1,3 @@
-
 import type { Handler, HandlerEvent } from "@netlify/functions";
 import { getPool } from "../lib/db";
 
