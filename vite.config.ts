@@ -6,19 +6,13 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
-    // Make the server accessible externally.
-    // This is needed for Netlify's preview and live sharing features.
-    host: true,
-    proxy: {
-      '/api': {
-        // This proxies requests to the Netlify Functions server running locally
-        // when running `vite` directly. `netlify dev` handles this automatically.
-        target: 'http://localhost:8888',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '/.netlify/functions'),
-      },
-    },
-    // The `allowedHosts` setting, which can be overly restrictive for local 
-    // development with `netlify dev`, has been removed to improve stability.
+    // Make the server accessible externally (e.g., on your local network).
+    // This is useful for testing on different devices and for Netlify's preview features.
+    host: true, 
   },
+  // The manual API proxy has been removed from this file.
+  // The recommended local development workflow is to use the Netlify CLI: `netlify dev`.
+  // This command automatically handles proxying API requests to your Netlify Functions,
+  // creating a development environment that perfectly matches the production setup.
+  // See the README.md for more details on getting started.
 })

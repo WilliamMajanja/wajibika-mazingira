@@ -6,10 +6,27 @@ import { UserCircleIcon } from '../components/icons/UserCircleIcon';
 import { useAuth } from '../contexts/AuthContext';
 import { useLayout } from '../contexts/LayoutContext';
 
+const CHAT_HISTORY_KEY = 'ai_assistant_chat_history';
+
+const getDefaultMessages = (): ChatMessage[] => [{
+    role: 'model',
+    content: `Hello! I am your AI Legal Assistant, specializing in Kenyan Environmental Law. How can I help you today?`
+}];
+
 export const AiAssistant: React.FC = () => {
     const { user } = useAuth();
     const { setTitle } = useLayout();
-    const [messages, setMessages] = useState<ChatMessage[]>([]);
+    
+    const [messages, setMessages] = useState<ChatMessage[]>(() => {
+        try {
+            const savedHistory = localStorage.getItem(CHAT_HISTORY_KEY);
+            return savedHistory ? JSON.parse(savedHistory) : getDefaultMessages();
+        } catch (error) {
+            console.error("Failed to parse chat history from localStorage", error);
+            return getDefaultMessages();
+        }
+    });
+
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -17,18 +34,30 @@ export const AiAssistant: React.FC = () => {
 
     useEffect(() => {
         setTitle('AI Legal Assistant');
-        // Initial greeting message
-        setMessages([{
-            role: 'model',
-            content: `Hello! I am your AI Legal Assistant, specializing in Kenyan Environmental Law. How can I help you today?`
-        }]);
     }, [setTitle]);
+
+    useEffect(() => {
+        try {
+            localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(messages));
+        } catch (error) {
+            console.error("Failed to save chat history to localStorage", error);
+        }
+    }, [messages]);
 
     useEffect(() => {
         if (chatContainerRef.current) {
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
         }
     }, [messages]);
+
+    const handleClearChat = () => {
+        setMessages(getDefaultMessages());
+        try {
+             localStorage.removeItem(CHAT_HISTORY_KEY);
+        } catch (error) {
+             console.error("Failed to clear chat history from localStorage", error);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -118,10 +147,16 @@ export const AiAssistant: React.FC = () => {
 
     return (
         <div className="flex flex-col h-[calc(100vh-120px)] max-w-4xl mx-auto">
-            <div className="flex items-center mb-6">
-                <SparklesIcon className="h-8 w-8 text-brand-green-light" />
-                <h2 className="text-3xl font-bold text-gray-800 ml-3">AI Legal Assistant</h2>
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
+                <div className="flex items-center">
+                    <SparklesIcon className="h-8 w-8 text-brand-green-light" />
+                    <h2 className="text-3xl font-bold text-gray-800 ml-3">AI Legal Assistant</h2>
+                </div>
+                <Button variant="secondary" onClick={handleClearChat}>
+                    Clear Chat
+                </Button>
             </div>
+
 
             <div ref={chatContainerRef} className="flex-grow bg-gray-50/50 rounded-lg p-4 overflow-y-auto border">
                 <div className="flex flex-col">
