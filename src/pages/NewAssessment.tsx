@@ -40,8 +40,7 @@ export const NewAssessment: React.FC = () => {
         assessmentType,
         projectName,
         projectLocation,
-        projectDescription,
-        null
+        projectDescription
       );
       
       const newAssessment = await createAIAssessment(report, {name: projectName, location: projectLocation});

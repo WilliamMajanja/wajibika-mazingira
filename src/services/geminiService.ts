@@ -5,8 +5,7 @@ export const generateAssessmentReport = async (
     assessmentType: AssessmentType,
     projectName: string,
     projectLocation: string,
-    projectDescription: string,
-    apiKey: string | null // This parameter is no longer used but kept for compatibility.
+    projectDescription: string
 ): Promise<AssessmentReport> => {
     try {
         const headers: HeadersInit = {
