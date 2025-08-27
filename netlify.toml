@@ -8,7 +8,8 @@
   # Specifies the directory containing the deploy-ready assets.
   publish = "dist"
   
-  # Explicitly tells Netlify where to find the serverless functions.
+  # CRITICAL: Explicitly tells Netlify where to find the serverless functions.
+  # This was the likely missing piece causing previous 404 errors.
   functions = "netlify/functions"
 
 [dev]
