@@ -28,7 +28,7 @@ const StatCard: React.FC<{icon: React.ReactNode, title: string, value: string | 
 
 export const Dashboard: React.FC = () => {
   const { user } = useAuth();
-  const { assessments, isLoading: assessmentsLoading, createManualAssessment } = useAssessments();
+  const { assessments, isLoading: assessmentsLoading, error, createManualAssessment } = useAssessments();
   const { evidence, isLoading: evidenceLoading } = useEvidence();
   const { setTitle } = useLayout();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -96,22 +96,35 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
       
-      {assessmentsLoading ? (
+      {error && (
+          <div className="text-center py-12 bg-red-50 rounded-lg shadow-sm">
+            <h4 className="text-lg font-medium text-red-700">Failed to load assessments.</h4>
+            <p className="text-red-600 mt-2">{error}</p>
+            <p className="text-sm text-gray-500 mt-2">Please check your configuration or try again later.</p>
+          </div>
+      )}
+
+      {!error && assessmentsLoading && (
         <div className="text-center py-12 bg-white rounded-lg shadow-sm">
            <h4 className="text-lg font-medium text-gray-700">Loading assessments...</h4>
         </div>
-      ) : assessments.length > 0 ? (
+      )}
+
+      {!error && !assessmentsLoading && assessments.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {assessments.slice(0, 6).map(assessment => (
             <AssessmentCard key={assessment.id} assessment={assessment} />
           ))}
         </div>
-      ) : (
+      )}
+
+      {!error && !assessmentsLoading && assessments.length === 0 && (
         <div className="text-center py-12 bg-white rounded-lg shadow-sm">
           <h4 className="text-lg font-medium text-gray-700">No assessments found.</h4>
           <p className="text-gray-500 mt-2">Get started by creating your first impact assessment.</p>
         </div>
       )}
+      
        <ManualAssessmentModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

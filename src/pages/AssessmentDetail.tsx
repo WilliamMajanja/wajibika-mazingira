@@ -11,7 +11,6 @@ import { EvidenceCard } from '../components/EvidenceCard';
 import { ForumThreadCard } from '../components/ForumThreadCard';
 import { Spinner } from '../components/common/Spinner';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
   <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
@@ -84,70 +83,153 @@ const ManualFormDataDisplay: React.FC<{ data: ManualFormData }> = ({ data }) => 
 
 export const AssessmentDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { getAssessmentById, isLoading: isAssessmentLoading } = useAssessments();
+  const { getAssessmentById, fetchAssessmentById } = useAssessments();
   const { getEvidenceForAssessment, isLoading: isEvidenceLoading } = useEvidence();
   const { getThreadsForAssessment, isLoading: isForumLoading, createThread } = useForum();
   const { setTitle } = useLayout();
   
-  const [assessment, setAssessment] = useState<Assessment | null | undefined>(undefined);
+  const [assessment, setAssessment] = useState<Assessment | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const [attachedEvidence, setAttachedEvidence] = useState<Evidence[]>([]);
   const [relatedThreads, setRelatedThreads] = useState<ForumThread[]>([]);
   const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
-    if (!isAssessmentLoading && id) {
-      const currentAssessment = getAssessmentById(id);
-      setAssessment(currentAssessment);
-      if (currentAssessment) {
-        setTitle(currentAssessment.project_name);
+    const loadAssessment = async () => {
+      if (!id) {
+        setError("No assessment ID provided.");
+        setIsLoading(false);
+        return;
+      }
+      setIsLoading(true);
+      setError(null);
+      
+      // Try to get from context first (for fast navigation)
+      let foundAssessment = getAssessmentById(id);
+      
+      // If not in context, fetch from API (for direct links/refresh)
+      if (!foundAssessment) {
+        foundAssessment = await fetchAssessmentById(id);
+      }
+
+      if (foundAssessment) {
+        setAssessment(foundAssessment);
+        setTitle(foundAssessment.project_name);
+        // Fetch related data in parallel
         getEvidenceForAssessment(id).then(setAttachedEvidence);
         getThreadsForAssessment(id).then(setRelatedThreads);
       } else {
+        setError("Assessment not found or you do not have permission to view it.");
         setTitle('Assessment Not Found');
       }
-    }
-  }, [id, getAssessmentById, isAssessmentLoading, setTitle, getEvidenceForAssessment, getThreadsForAssessment]);
+      setIsLoading(false);
+    };
+
+    loadAssessment();
+  }, [id, getAssessmentById, fetchAssessmentById, setTitle, getEvidenceForAssessment, getThreadsForAssessment]);
+
 
   const handleDownloadPdf = () => {
-    if (!assessment || assessment.type === 'Manual') return;
-    const reportContentElement = document.getElementById('assessment-report-content');
-    if (reportContentElement) {
-        setIsDownloading(true);
-        html2canvas(reportContentElement, { scale: 2, useCORS: true, logging: false })
-            .then(canvas => {
-                const imgData = canvas.toDataURL('image/png');
-                const pdf = new jsPDF({
-                    orientation: 'p',
-                    unit: 'mm',
-                    format: 'a4',
+    if (!assessment || assessment.type !== 'AI' || !assessment.report) return;
+
+    setIsDownloading(true);
+    try {
+        const doc = new jsPDF();
+        const report = assessment.report;
+        let yPos = 20;
+        const margin = 15;
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const textWidth = pageWidth - margin * 2;
+        
+        const checkPageBreak = (spaceNeeded: number) => {
+            if (yPos + spaceNeeded > pageHeight - margin) {
+                doc.addPage();
+                yPos = margin;
+            }
+        };
+
+        // --- PDF Title ---
+        doc.setFontSize(18);
+        doc.setFont('helvetica', 'bold');
+        doc.text(report.assessmentTitle, pageWidth / 2, yPos, { align: 'center' });
+        yPos += 15;
+
+        // --- Project Details ---
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Project: ${assessment.project_name}`, margin, yPos);
+        yPos += 6;
+        doc.text(`Location: ${assessment.location}`, margin, yPos);
+        yPos += 6;
+        doc.text(`Date: ${new Date(assessment.date).toLocaleDateString()}`, margin, yPos);
+        yPos += 10;
+
+        // --- Helper function for sections ---
+        const addSection = (title: string, content: string | { header: string, body: string }[]) => {
+            checkPageBreak(20);
+            yPos += 5;
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.text(title, margin, yPos);
+            doc.line(margin, yPos + 2, pageWidth - margin, yPos + 2); // Underline
+            yPos += 10;
+            
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'normal');
+
+            if (typeof content === 'string') {
+                const lines = doc.splitTextToSize(content, textWidth);
+                checkPageBreak(lines.length * 6);
+                doc.text(lines, margin, yPos);
+                yPos += lines.length * 6 + 5;
+            } else {
+                content.forEach(item => {
+                    checkPageBreak(15);
+                    doc.setFont('helvetica', 'bold');
+                    const headerLines = doc.splitTextToSize(item.header, textWidth);
+                    doc.text(headerLines, margin, yPos);
+                    yPos += headerLines.length * 6;
+
+                    doc.setFont('helvetica', 'normal');
+                    const bodyLines = doc.splitTextToSize(item.body, textWidth);
+                    checkPageBreak(bodyLines.length * 6);
+                    doc.text(bodyLines, margin + 5, yPos); // Indent body
+                    yPos += bodyLines.length * 6 + 7;
                 });
+            }
+        };
 
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                const pdfHeight = pdf.internal.pageSize.getHeight();
-                const canvasWidth = canvas.width;
-                const canvasHeight = canvas.height;
-                const ratio = canvasWidth / canvasHeight;
-                const newCanvasHeight = pdfWidth / ratio;
-                let heightLeft = newCanvasHeight;
-                let position = 0;
+        // --- Build PDF content from report data ---
+        addSection("Project Summary", report.projectSummary);
+        
+        addSection("Applicable Legal Framework (Kenya)", (report.legalFramework || []).map(item => ({
+            header: item.statute,
+            body: item.relevance
+        })));
+        
+        addSection("Potential Impacts", (report.potentialImpacts || []).map(item => ({
+            header: `${item.impactArea} (Severity: ${item.severity})`,
+            body: item.description
+        })));
 
-                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, newCanvasHeight);
-                heightLeft -= pdfHeight;
+        addSection("Proposed Mitigation Measures", (report.mitigationMeasures || []).map(item => ({
+            header: item.measure,
+            body: item.implementation
+        })));
 
-                while (heightLeft >= 0) {
-                    position = heightLeft - newCanvasHeight;
-                    pdf.addPage();
-                    pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, newCanvasHeight);
-                    heightLeft -= pdfHeight;
-                }
+        addSection("Stakeholder Engagement Plan", report.stakeholderEngagementPlan);
+        addSection("Recommendations", report.recommendations);
+        
+        doc.save(`${assessment.project_name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_assessment.pdf`);
 
-                pdf.save(`${assessment.project_name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_assessment.pdf`);
-            })
-            .catch(err => {
-                console.error("Error generating PDF:", err);
-                alert("Sorry, there was an error generating the PDF report.");
-            })
-            .finally(() => setIsDownloading(false));
+    } catch (err) {
+        console.error("Error generating PDF:", err);
+        alert("Sorry, there was an error generating the PDF report.");
+    } finally {
+        setIsDownloading(false);
     }
   };
 
@@ -165,7 +247,7 @@ export const AssessmentDetail: React.FC = () => {
   };
 
 
-  if (isAssessmentLoading || assessment === undefined) {
+  if (isLoading) {
     return (
       <div className="text-center py-12">
         <h4 className="text-lg font-medium text-gray-700">Loading assessment details...</h4>
@@ -173,7 +255,20 @@ export const AssessmentDetail: React.FC = () => {
     );
   }
 
+  if (error) {
+     return (
+        <div className="text-center py-12 bg-red-50 rounded-lg shadow-sm">
+            <h4 className="text-lg font-medium text-red-700">Error</h4>
+            <p className="text-red-600 mt-2">{error}</p>
+            <Link to="/dashboard" className="text-brand-green-light hover:text-brand-green font-semibold mt-4 inline-block">
+                &larr; Back to Dashboard
+            </Link>
+        </div>
+    );
+  }
+
   if (!assessment) {
+    // This case should ideally be covered by the error state now.
     return <Navigate to="/dashboard" />;
   }
 
@@ -183,11 +278,19 @@ export const AssessmentDetail: React.FC = () => {
   if (type === 'Manual') {
     return (
         <div>
-            {/* Same header as before */}
+            <div className="flex justify-between items-start mb-8">
+              <div>
+                  <h2 className="text-3xl font-bold text-gray-900">{project_name} (Manual Record)</h2>
+                  <div className="mt-2 flex items-center space-x-4 text-sm text-gray-500">
+                      <span>Location: <span className="font-medium text-gray-700">{location}</span></span>
+                      <span>Date: <span className="font-medium text-gray-700">{new Date(date).toLocaleDateString()}</span></span>
+                  </div>
+              </div>
+            </div>
             <Section title="Manual Assessment Form Details">
                 {manual_form ? <ManualFormDataDisplay data={manual_form} /> : <p className="text-gray-500">No detailed form data was submitted for this manual record.</p>}
             </Section>
-            {/* Attached Evidence and Forum sections for manual assessments too */}
+            {/* Common sections for Evidence and Forum */}
         </div>
     );
   }
@@ -195,7 +298,7 @@ export const AssessmentDetail: React.FC = () => {
   // AI Assessment View
   return (
     <div>
-        <div id="assessment-report-content" className="bg-brand-light p-4">
+        <div className="bg-brand-light p-4">
             <div className="flex justify-between items-start mb-8">
                 <div>
                     <h2 className="text-3xl font-bold text-gray-900">{report.assessmentTitle}</h2>

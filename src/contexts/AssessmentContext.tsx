@@ -7,6 +7,7 @@ interface AssessmentContextType {
   isLoading: boolean;
   error: string | null;
   getAssessmentById: (id: string) => Assessment | undefined;
+  fetchAssessmentById: (id: string) => Promise<Assessment | null>;
   createAIAssessment: (report: AssessmentReport, projectDetails: {name: string, location: string}) => Promise<Assessment>;
   createManualAssessment: (
     projectDetails: { name: string; location: string; assessmentType: AssessmentType },
@@ -59,6 +60,39 @@ export const AssessmentProvider: React.FC<{ children: ReactNode }> = ({ children
   const getAssessmentById = useCallback((id: string) => {
     return assessments.find(a => a.id === id);
   }, [assessments]);
+
+  const fetchAssessmentById = async (id: string): Promise<Assessment | null> => {
+    if (!isAuthenticated) return null;
+    try {
+      const token = await getAccessToken();
+      const response = await fetch(`/api/assessments?id=${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.status === 404) {
+        return null;
+      }
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({error: 'Failed to fetch assessment.'}));
+        throw new Error(errorData.error || "Failed to fetch assessment.");
+      }
+      const data: Assessment = await response.json();
+      // Add or update the assessment in the local state for consistency
+      setAssessments(prev => {
+        const index = prev.findIndex(a => a.id === data.id);
+        if (index > -1) {
+          const newState = [...prev];
+          newState[index] = data;
+          return newState;
+        }
+        return [data, ...prev];
+      });
+      return data;
+    } catch (e: any) {
+      console.error("Failed to fetch assessment by ID", e);
+      // Do not set the global error for a single fetch failure
+      return null;
+    }
+  };
 
   const createAssessment = async (assessmentData: Omit<Assessment, 'id' | 'user_id' | 'report'> & { report?: AssessmentReport, manual_form?: ManualFormData }): Promise<Assessment> => {
      if (!isAuthenticated) throw new Error("User not authenticated");
@@ -131,6 +165,7 @@ export const AssessmentProvider: React.FC<{ children: ReactNode }> = ({ children
     isLoading,
     error,
     getAssessmentById,
+    fetchAssessmentById,
     createAIAssessment,
     createManualAssessment,
   };

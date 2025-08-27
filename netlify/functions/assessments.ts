@@ -12,7 +12,7 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
         };
     }
 
-    const { httpMethod, body } = event;
+    const { httpMethod, body, queryStringParameters } = event;
     const client = await pool.connect();
 
     // Securely get user information from the context provided by Netlify's JWT-based access control.
@@ -25,12 +25,26 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
                 return { statusCode: 401, body: JSON.stringify({ error: 'You must be logged in to view assessments.' }) };
             }
 
-            const result = await client.query(
-                'SELECT * FROM assessments WHERE user_id = $1 ORDER BY date DESC',
-                [user.sub] // 'sub' (subject) is the standard user ID claim in JWTs.
-            );
-            
-            return { statusCode: 200, body: JSON.stringify(result.rows) };
+            const { id } = queryStringParameters || {};
+
+            if (id) {
+                // Fetch a single assessment by ID
+                const result = await client.query(
+                    'SELECT * FROM assessments WHERE id = $1 AND user_id = $2',
+                    [id, user.sub]
+                );
+                if (result.rows.length === 0) {
+                    return { statusCode: 404, body: JSON.stringify({ error: 'Assessment not found.' }) };
+                }
+                return { statusCode: 200, body: JSON.stringify(result.rows[0]) };
+            } else {
+                // Fetch all assessments for the user
+                const result = await client.query(
+                    'SELECT * FROM assessments WHERE user_id = $1 ORDER BY date DESC',
+                    [user.sub] // 'sub' (subject) is the standard user ID claim in JWTs.
+                );
+                return { statusCode: 200, body: JSON.stringify(result.rows) };
+            }
         }
 
         if (httpMethod === 'POST') {

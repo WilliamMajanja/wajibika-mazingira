@@ -91,16 +91,16 @@ export const AiAssistant: React.FC = () => {
         }
     }, [messages]);
 
-    const addMessage = useCallback((message: ChatMessage) => {
-        setMessages(prev => [...prev, message]);
-    }, []);
-
     const handleSummarize = async (evidenceId: string) => {
         setIsModalOpen(false);
         setIsLoading(true);
         setError(null);
-        addMessage({ role: 'user', content: `Please summarize the evidence document with ID: ${evidenceId}` });
-        addMessage({ role: 'model', content: '' });
+        
+        const userMessage: ChatMessage = { role: 'user', content: `Please summarize the evidence document with ID: ${evidenceId}` };
+        const historyBeforeRequest = [...messages];
+        
+        // Optimistically update UI
+        setMessages(prev => [...prev, userMessage, { role: 'model', content: '' }]);
 
         try {
             const response = await fetch('/api/evidence', {
@@ -120,7 +120,7 @@ export const AiAssistant: React.FC = () => {
 
         } catch (err: any) {
             setError("Sorry, I couldn't summarize that document. " + err.message);
-            setMessages(prev => prev.slice(0, -2)); // Revert optimistic updates
+            setMessages(historyBeforeRequest); // Revert optimistic updates
         } finally {
             setIsLoading(false);
         }
