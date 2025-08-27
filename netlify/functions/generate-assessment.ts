@@ -1,4 +1,3 @@
-
 import type { Handler, HandlerEvent } from "@netlify/functions";
 import { GoogleGenAI, Type } from "@google/genai";
 
@@ -113,7 +112,7 @@ export const handler: Handler = async (event: HandlerEvent) => {
         config: {
             responseMimeType: "application/json",
             responseSchema: ASSESSMENT_REPORT_SCHEMA,
-            systemInstruction: "You are an expert environmental legal consultant specializing in Kenyan law. Your primary role is to assist legal practitioners in drafting comprehensive environmental impact assessments. All your outputs must be based on current Kenyan legislation, including but not not limited to the Environmental Management and Co-ordination Act (EMCA), and relevant international conventions that Kenya is a signatory to. Provide structured, detailed, and actionable advice.",
+            systemInstruction: "You are an expert environmental legal consultant specializing in Kenyan law. Your primary role is to assist legal practitioners in drafting comprehensive environmental impact assessments. All your outputs must be based on current Kenyan legislation, including but not limited to the Environmental Management and Co-ordination Act (EMCA), and relevant international conventions that Kenya is a signatory to. Provide structured, detailed, and actionable advice.",
         }
     });
     
