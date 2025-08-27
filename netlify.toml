@@ -1,17 +1,42 @@
+# This file configures the build and deployment settings for Netlify.
+# It is the key to connecting the frontend application to the backend serverless functions.
+
 [build]
+  # Specifies the command to run to build the site.
   command = "npm install --legacy-peer-deps && npm run build"
+  
+  # Specifies the directory containing the deploy-ready assets.
   publish = "dist"
+  
+  # CRITICAL: Explicitly tells Netlify where to find the serverless functions.
+  # This was the likely missing piece causing previous 404 errors.
+  functions = "netlify/functions"
 
 [dev]
+  # Configuration for the `netlify dev` local development command.
   command = "vite"
   port = 8888
   publish = "dist"
 
+# Sets the Node.js version for the build environment.
 [build.environment]
   NODE_VERSION = "20"
   NPM_FLAGS = "--legacy-peer-deps"
-  GEMINI_API_KEY = "${GEMINI_API_KEY}"
 
+# IMPORTANT: Redirects are processed in the order they appear.
+# The more specific API rewrite rule MUST come before the general SPA catch-all rule.
+
+# Rule 1: API Proxy to Serverless Functions
+# This rule rewrites any request starting with /api/ to the corresponding function.
+# This is the critical fix for all 404 errors.
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+# Rule 2: Single-Page Application (SPA) Fallback
+# This rule ensures that any direct navigation to a client-side route (e.g., /dashboard)
+# serves the main index.html file, allowing React Router to handle the routing.
 [[redirects]]
   from = "/*"
   to = "/index.html"
