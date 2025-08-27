@@ -1,5 +1,5 @@
 # This file configures the build and deployment settings for Netlify.
-# It is the key to connecting the frontend to the backend serverless functions.
+# It is the key to connecting the frontend application to the backend serverless functions.
 
 [build]
   # Specifies the command to run to build the site.
@@ -14,18 +14,6 @@
 # This section increases the execution time for the specified function.
 # The default is 10 seconds. We're increasing it to 26 seconds to prevent
 # timeouts when the AI needs more time to generate a detailed report.
-[functions."generate-assessment"]
-  timeout = 26
-[functions."assessments"]
-  timeout = 26
-[functions."config"]
-  timeout = 26
-[functions."evidence"]
-  timeout = 26
-[functions."forum-messages"]
-  timeout = 26
-[functions."forum-threads"]
-  timeout = 26
 [functions."generate-assessment"]
   timeout = 26
 
