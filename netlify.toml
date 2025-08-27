@@ -15,11 +15,17 @@
 # The default is 10 seconds. We're increasing it to 26 seconds to prevent
 # timeouts when the AI needs more time to generate a detailed report.
 [functions."generate-assessment"]
+  timeout = 26
 [functions."assessments"]
+  timeout = 26
 [functions."config"]
+  timeout = 26
 [functions."evidence"]
+  timeout = 26
 [functions."forum-messages"]
+  timeout = 26
 [functions."forum-threads"]
+  timeout = 26
 [functions."generate-assessment"]
   timeout = 26
 
