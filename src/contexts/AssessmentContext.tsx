@@ -60,7 +60,7 @@ export const AssessmentProvider: React.FC<{ children: ReactNode }> = ({ children
     return assessments.find(a => a.id === id);
   }, [assessments]);
 
-  const createAssessment = async (assessmentData: Omit<Assessment, 'id' | 'user_id'>): Promise<Assessment> => {
+  const createAssessment = async (assessmentData: Omit<Assessment, 'id' | 'user_id' | 'report'> & { report?: AssessmentReport, manual_form?: ManualFormData }): Promise<Assessment> => {
      if (!isAuthenticated) throw new Error("User not authenticated");
     try {
       const token = await getAccessToken();
@@ -89,11 +89,12 @@ export const AssessmentProvider: React.FC<{ children: ReactNode }> = ({ children
   }
 
   const createAIAssessment = async (report: AssessmentReport, projectDetails: {name: string, location: string}): Promise<Assessment> => {
-    const newAssessmentData: Omit<Assessment, 'id' | 'user_id'> = {
+    const newAssessmentData = {
       project_name: projectDetails.name,
       location: projectDetails.location,
       date: new Date().toISOString(),
-      type: 'AI',
+      // FIX: Explicitly cast 'type' to prevent widening to 'string' which causes a type error.
+      type: 'AI' as 'AI',
       report,
     };
     return createAssessment(newAssessmentData);
@@ -113,11 +114,12 @@ export const AssessmentProvider: React.FC<{ children: ReactNode }> = ({ children
         recommendations: 'Contained within the attached manual form.',
     };
 
-    const newAssessmentData: Omit<Assessment, 'id' | 'user_id'> = {
+    const newAssessmentData = {
       project_name: projectDetails.name,
       location: projectDetails.location,
       date: new Date().toISOString(),
-      type: 'Manual',
+      // FIX: Explicitly cast 'type' to prevent widening to 'string' which causes a type error.
+      type: 'Manual' as 'Manual',
       report,
       manual_form: formData,
     };

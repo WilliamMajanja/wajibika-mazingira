@@ -97,6 +97,7 @@ CREATE TABLE assessments (
 );
 
 -- Creates the table for the public evidence locker
+-- Evidence can be stand-alone or linked to a specific assessment
 CREATE TABLE evidence (
     id SERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
@@ -105,17 +106,21 @@ CREATE TABLE evidence (
     date_of_evidence DATE NOT NULL,
     submitted_at TIMESTAMPTZ NOT NULL,
     file_content TEXT,
-    file_mime_type VARCHAR(255)
+    file_mime_type VARCHAR(255),
+    tags TEXT[],
+    assessment_id INTEGER REFERENCES assessments(id) ON DELETE CASCADE
 );
 
 -- Creates the table for forum discussion threads
+-- Threads can be general or linked to a specific assessment
 CREATE TABLE forum_threads (
     id SERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     author JSONB NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     reply_count INTEGER DEFAULT 0,
-    last_reply_at TIMESTAMPTZ DEFAULT NOW()
+    last_reply_at TIMESTAMPTZ DEFAULT NOW(),
+    assessment_id INTEGER REFERENCES assessments(id) ON DELETE SET NULL
 );
 
 -- Creates the table for messages within a forum thread
@@ -124,7 +129,9 @@ CREATE TABLE forum_messages (
     thread_id INTEGER NOT NULL REFERENCES forum_threads(id) ON DELETE CASCADE,
     author JSONB NOT NULL,
     content TEXT NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    likes INTEGER DEFAULT 0,
+    liked_by VARCHAR(255)[] DEFAULT ARRAY[]::VARCHAR(255)[]
 );
 ```
 

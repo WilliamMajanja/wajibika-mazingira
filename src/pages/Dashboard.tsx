@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AssessmentCard } from '../components/AssessmentCard';
 import { Button } from '../components/common/Button';
@@ -9,6 +9,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useAssessments } from '../contexts/AssessmentContext';
 import { useEvidence } from '../contexts/EvidenceContext';
 import { useLayout } from '../contexts/LayoutContext';
+import { ManualAssessmentModal } from '../components/ManualAssessmentModal';
+import { AssessmentType, ManualFormData } from '../types';
 
 
 const StatCard: React.FC<{icon: React.ReactNode, title: string, value: string | number, linkTo: string}> = ({icon, title, value, linkTo}) => (
@@ -26,15 +28,31 @@ const StatCard: React.FC<{icon: React.ReactNode, title: string, value: string | 
 
 export const Dashboard: React.FC = () => {
   const { user } = useAuth();
-  const { assessments, isLoading: assessmentsLoading } = useAssessments();
+  const { assessments, isLoading: assessmentsLoading, createManualAssessment } = useAssessments();
   const { evidence, isLoading: evidenceLoading } = useEvidence();
   const { setTitle } = useLayout();
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
       setTitle('Dashboard');
   }, [setTitle]);
   
   const userName = user?.name?.split(' ')[0] || user?.nickname || user?.email || 'Practitioner';
+  
+  const handleManualSubmit = async (
+    projectDetails: { name: string; location: string; assessmentType: AssessmentType },
+    formData: ManualFormData
+  ) => {
+    try {
+      await createManualAssessment(projectDetails, formData);
+      setIsModalOpen(false);
+    } catch (err) {
+      console.error("Failed to create manual assessment:", err);
+      // Re-throw the error to be caught by the modal's internal state
+      throw err;
+    }
+  };
+
 
   return (
     <div>
@@ -68,9 +86,14 @@ export const Dashboard: React.FC = () => {
 
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-xl font-semibold text-gray-700">Recent Assessments</h3>
-        <Link to="/new-assessment">
-            <Button>Start New Assessment</Button>
-        </Link>
+        <div className="flex items-center gap-2">
+            <Button onClick={() => setIsModalOpen(true)} variant="secondary">
+              Create Manual Record
+            </Button>
+            <Link to="/new-assessment">
+                <Button>Start AI Assessment</Button>
+            </Link>
+        </div>
       </div>
       
       {assessmentsLoading ? (
@@ -89,6 +112,11 @@ export const Dashboard: React.FC = () => {
           <p className="text-gray-500 mt-2">Get started by creating your first impact assessment.</p>
         </div>
       )}
+       <ManualAssessmentModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleManualSubmit}
+      />
     </div>
   );
 };

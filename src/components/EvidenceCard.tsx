@@ -79,7 +79,7 @@ export const EvidenceCard: React.FC<{evidence: Evidence}> = ({ evidence: initial
         {isImage && (
           <div className="h-40 bg-gray-200 flex items-center justify-center relative">
              <button onClick={handleViewImage} className="w-full h-full text-center text-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-inset focus:ring-brand-green">
-                {isLoading ? <Spinner size="sm" /> : <span>Click to view image</span>}
+                {isLoading ? <Spinner size="sm" colorClass="border-brand-green-light" /> : <span>Click to view image</span>}
              </button>
           </div>
         )}
@@ -98,9 +98,17 @@ export const EvidenceCard: React.FC<{evidence: Evidence}> = ({ evidence: initial
           </p>
           
           {initialEvidence.description && (
-            <p className="text-sm text-gray-600 mt-3 line-clamp-3">
+            <p className="text-sm text-gray-600 mt-3 line-clamp-2">
               {initialEvidence.description}
             </p>
+          )}
+
+          {initialEvidence.tags && initialEvidence.tags.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+                {initialEvidence.tags.map(tag => (
+                    <span key={tag} className="px-2 py-0.5 text-xs font-medium bg-gray-200 text-gray-700 rounded-full">{tag}</span>
+                ))}
+            </div>
           )}
         </div>
 
@@ -117,7 +125,7 @@ export const EvidenceCard: React.FC<{evidence: Evidence}> = ({ evidence: initial
             >
               {isLoading ? (
                 <>
-                  <Spinner size="sm" />
+                  <Spinner size="sm" colorClass="border-brand-green-light" />
                   <span className="ml-2">Loading...</span>
                 </>
               ) : (

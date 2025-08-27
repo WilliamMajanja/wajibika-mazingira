@@ -85,7 +85,14 @@ export interface Evidence {
   submitted_at: string;
   file_content?: string;
   file_mime_type?: string;
+  tags?: string[];
+  assessment_id?: string;
 }
+
+export type EvidenceForUpload = Omit<Evidence, 'id' | 'submitted_at' | 'file_content'> & {
+    file?: File;
+};
+
 
 export interface ChatMessage {
   role: 'user' | 'model';
@@ -105,6 +112,8 @@ export interface ForumMessage {
   author: AuthorInfo;
   content: string;
   created_at: string;
+  likes: number;
+  liked_by: string[];
 }
 
 export interface ForumThread {
@@ -115,4 +124,6 @@ export interface ForumThread {
   reply_count: number;
   last_reply_at?: string;
   messages?: ForumMessage[];
+  assessment_id?: string;
+  assessment_name?: string;
 }

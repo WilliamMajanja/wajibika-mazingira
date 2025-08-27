@@ -65,7 +65,9 @@ const generatePrompt = (
       - Name: ${projectName}
       - Location: ${projectLocation}
       - Description: ${projectDescription}
+      
       Your response MUST strictly adhere to the provided JSON schema.
+      Do not wrap the JSON response in markdown backticks.
       The analysis must be grounded in Kenyan law, primarily the Environmental Management and Co-ordination Act (EMCA), and consider relevant bodies like NEMA.
     `;
 };

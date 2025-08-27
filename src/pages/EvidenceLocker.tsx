@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '../components/common/Button';
 import { EvidenceCard } from '../components/EvidenceCard';
 import { FolderPlusIcon } from '../components/icons/FolderPlusIcon';
@@ -28,6 +27,7 @@ export const EvidenceLocker: React.FC = () => {
     const [description, setDescription] = useState('');
     const [location, setLocation] = useState('');
     const [dateOfEvidence, setDateOfEvidence] = useState('');
+    const [tags, setTags] = useState('');
     const [file, setFile] = useState<File | null>(null);
     
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -35,11 +35,11 @@ export const EvidenceLocker: React.FC = () => {
     const [formSuccess, setFormSuccess] = useState<string | null>(null);
     
     const [searchTerm, setSearchTerm] = useState('');
+    const [activeTag, setActiveTag] = useState<string | null>(null);
     const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
 
-
     useEffect(() => {
-        setTitle('Evidence Locker');
+        setTitle('Public Evidence Locker');
     }, [setTitle]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -62,6 +62,7 @@ export const EvidenceLocker: React.FC = () => {
         setDescription('');
         setLocation('');
         setDateOfEvidence('');
+        setTags('');
         setFile(null);
         const fileInput = document.getElementById('evidenceFile') as HTMLInputElement;
         if(fileInput) fileInput.value = '';
@@ -93,6 +94,7 @@ export const EvidenceLocker: React.FC = () => {
                 description,
                 location,
                 date_of_evidence: dateOfEvidence,
+                tags: tags.split(',').map(t => t.trim()).filter(Boolean),
                 file_content,
                 file_mime_type,
             });
@@ -106,18 +108,29 @@ export const EvidenceLocker: React.FC = () => {
         }
     };
 
-    const filteredAndSortedEvidence = evidence
-        .filter(item => 
-            item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (item.description || '').toLowerCase().includes(searchTerm.toLowerCase())
-        )
+    const allTags = useMemo(() => {
+        const tagSet = new Set<string>();
+        evidence.forEach(item => {
+            item.tags?.forEach(tag => tagSet.add(tag));
+        });
+        return Array.from(tagSet).sort();
+    }, [evidence]);
+
+    const filteredAndSortedEvidence = useMemo(() => evidence
+        .filter(item => {
+            const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (item.description || '').toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesTag = activeTag ? item.tags?.includes(activeTag) : true;
+            return matchesSearch && matchesTag;
+        })
         .sort((a, b) => {
             if (sortOrder === 'newest') {
                 return new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime();
             } else {
                 return new Date(a.submitted_at).getTime() - new Date(b.submitted_at).getTime();
             }
-        });
+        }), [evidence, searchTerm, activeTag, sortOrder]);
+
 
     return (
         <div>
@@ -126,7 +139,7 @@ export const EvidenceLocker: React.FC = () => {
                 <h2 className="text-3xl font-bold text-gray-800 ml-3">Public Evidence Locker</h2>
             </div>
             <p className="text-gray-600 mb-8 max-w-2xl">
-                Submit evidence of environmental incidents or concerns. Your submission helps build a case for accountability.
+                Submit evidence of environmental incidents. This evidence is public and not tied to a specific assessment.
             </p>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -148,13 +161,17 @@ export const EvidenceLocker: React.FC = () => {
                             <label htmlFor="dateOfEvidence" className="block text-sm font-medium text-gray-700">Date of Evidence*</label>
                             <input type="date" id="dateOfEvidence" value={dateOfEvidence} onChange={e => setDateOfEvidence(e.target.value)} className="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm text-sm" required/>
                         </div>
+                         <div>
+                            <label htmlFor="tags" className="block text-sm font-medium text-gray-700">Tags (comma-separated)</label>
+                            <input type="text" id="tags" value={tags} onChange={e => setTags(e.target.value)} className="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm text-sm" placeholder="e.g., pollution, waste, river"/>
+                        </div>
                         <div>
                             <label htmlFor="description" className="block text-sm font-medium text-gray-700">Description</label>
-                            <textarea id="description" rows={4} value={description} onChange={e => setDescription(e.target.value)} className="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm text-sm" placeholder="Provide details about the evidence..."></textarea>
+                            <textarea id="description" rows={3} value={description} onChange={e => setDescription(e.target.value)} className="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm text-sm" placeholder="Provide details about the evidence..."></textarea>
                         </div>
                          <div>
-                            <label htmlFor="evidenceFile" className="block text-sm font-medium text-gray-700">Attach File (Image or PDF, max 4MB)</label>
-                            <input type="file" id="evidenceFile" onChange={handleFileChange} className="mt-1 w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-green-light/10 file:text-brand-green-light hover:file:bg-brand-green-light/20" accept="image/*,.pdf" />
+                            <label htmlFor="evidenceFile" className="block text-sm font-medium text-gray-700">Attach File (Image/PDF/Text, max 4MB)</label>
+                            <input type="file" id="evidenceFile" onChange={handleFileChange} className="mt-1 w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-green-light/10 file:text-brand-green-light hover:file:bg-brand-green-light/20" accept="image/*,.pdf,.txt,.doc,.docx" />
                         </div>
                         <div className="text-right">
                             <Button type="submit" isLoading={isSubmitting} disabled={isSubmitting}>
@@ -164,9 +181,7 @@ export const EvidenceLocker: React.FC = () => {
                     </form>
                 </div>
                 <div className="lg:col-span-2">
-                    <h3 className="text-xl font-semibold text-gray-700 mb-4">Submitted Evidence Gallery</h3>
-                    
-                     <div className="mb-6 flex flex-col sm:flex-row gap-4">
+                     <div className="mb-4 flex flex-col sm:flex-row gap-4">
                         <div className="relative flex-grow">
                             <input
                                 type="text"
@@ -189,6 +204,14 @@ export const EvidenceLocker: React.FC = () => {
                         </select>
                     </div>
 
+                    <div className="mb-6 flex flex-wrap gap-2 items-center">
+                      <span className="text-sm font-medium text-gray-600">Filter by tag:</span>
+                        <button onClick={() => setActiveTag(null)} className={`px-3 py-1 text-xs rounded-full transition-colors ${activeTag === null ? 'bg-brand-green text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>All</button>
+                        {allTags.map(tag => (
+                            <button key={tag} onClick={() => setActiveTag(tag)} className={`px-3 py-1 text-xs rounded-full transition-colors ${activeTag === tag ? 'bg-brand-green text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>{tag}</button>
+                        ))}
+                    </div>
+
                     {isEvidenceLoading ? (
                          <div className="text-center py-12 bg-white rounded-lg shadow-sm">
                             <h4 className="text-lg font-medium text-gray-700">Loading evidence...</h4>
@@ -208,7 +231,7 @@ export const EvidenceLocker: React.FC = () => {
                         ) : (
                             <div className="text-center py-12 bg-white rounded-lg shadow-sm">
                                 <h4 className="text-lg font-medium text-gray-700">No Evidence Found</h4>
-                                <p className="text-gray-500 mt-2">Your search for "{searchTerm}" did not match any records.</p>
+                                <p className="text-gray-500 mt-2">Your search and filter criteria did not match any records.</p>
                             </div>
                         )
                     ) : (

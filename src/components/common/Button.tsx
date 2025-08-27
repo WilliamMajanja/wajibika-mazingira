@@ -28,7 +28,7 @@ export const Button: React.FC<ButtonProps> = ({
       disabled={isLoading || props.disabled}
       {...props}
     >
-      {isLoading ? <Spinner /> : children}
+      {isLoading ? <Spinner colorClass={variant === 'primary' ? 'border-white' : 'border-gray-800'} /> : children}
     </button>
   );
 };

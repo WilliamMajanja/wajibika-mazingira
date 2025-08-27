@@ -25,25 +25,60 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
 
         if (httpMethod === 'POST') {
             const user = context.clientContext?.user;
-            if (!user) return { statusCode: 401, body: JSON.stringify({ error: 'You must be logged in to post a reply.' }) };
+            if (!user) return { statusCode: 401, body: JSON.stringify({ error: 'You must be logged in to interact.' }) };
             if (!body) return { statusCode: 400, body: JSON.stringify({ error: 'Request body is missing' }) };
 
-            const { threadId, content } = JSON.parse(body);
+            const payload = JSON.parse(body);
+            
+            // --- Route action: Toggle Like ---
+            if (payload.action === 'toggle_like') {
+                const { messageId } = payload;
+                if (!messageId) return { statusCode: 400, body: JSON.stringify({ error: 'Missing messageId' }) };
+                
+                await client.query('BEGIN');
+                const messageResult = await client.query('SELECT liked_by FROM forum_messages WHERE id = $1 FOR UPDATE', [messageId]);
+                if (messageResult.rows.length === 0) {
+                     await client.query('ROLLBACK');
+                    return { statusCode: 404, body: JSON.stringify({ error: 'Message not found' }) };
+                }
+
+                const likedBy: string[] = messageResult.rows[0].liked_by || [];
+                const userId = user.sub;
+                let updatedMessage;
+
+                if (likedBy.includes(userId)) {
+                    // User has liked, so unlike
+                    updatedMessage = await client.query(
+                        `UPDATE forum_messages
+                         SET likes = likes - 1, liked_by = array_remove(liked_by, $1)
+                         WHERE id = $2 RETURNING *`,
+                         [userId, messageId]
+                    );
+                } else {
+                    // User has not liked, so like
+                    updatedMessage = await client.query(
+                        `UPDATE forum_messages
+                         SET likes = likes + 1, liked_by = array_append(liked_by, $1)
+                         WHERE id = $2 RETURNING *`,
+                         [userId, messageId]
+                    );
+                }
+                await client.query('COMMIT');
+                return { statusCode: 200, body: JSON.stringify(updatedMessage.rows[0]) };
+            }
+
+            // --- Default action: Create Message ---
+            const { threadId, content } = payload;
             if (!threadId || !content) {
                 return { statusCode: 400, body: JSON.stringify({ error: 'Missing threadId or content' }) };
             }
 
-            // Construct the author object from standard JWT claims
-            const author = {
-                id: user.sub,
-                name: user.name || user.email,
-                picture: user.picture
-            };
+            const author = { id: user.sub, name: user.name || user.email, picture: user.picture };
 
             await client.query('BEGIN');
             const messageResult = await client.query(
-                `INSERT INTO forum_messages (thread_id, author, content, created_at)
-                 VALUES ($1, $2, $3, NOW())
+                `INSERT INTO forum_messages (thread_id, author, content, created_at, liked_by)
+                 VALUES ($1, $2, $3, NOW(), '{}')
                  RETURNING *`,
                 [threadId, author, content]
             );
@@ -59,7 +94,7 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
         return { statusCode: 405, headers: { 'Allow': 'GET, POST' }, body: JSON.stringify({ error: 'Method Not Allowed' }) };
     } catch (error: any) {
         if(client) await client.query('ROLLBACK').catch(console.error);
-        console.error("Error creating message:", error);
+        console.error("Error in forum-messages function:", error);
         return { statusCode: 500, body: JSON.stringify({ error: error.message || 'A database error occurred.' }) };
     } finally {
         if(client) client.release();

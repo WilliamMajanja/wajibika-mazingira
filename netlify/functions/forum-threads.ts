@@ -19,7 +19,12 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
     try {
         if (httpMethod === 'GET') {
             if (threadId) {
-                const threadResult = await client.query('SELECT * FROM forum_threads WHERE id = $1', [threadId]);
+                const threadResult = await client.query(
+                    `SELECT ft.*, a.project_name as assessment_name 
+                     FROM forum_threads ft
+                     LEFT JOIN assessments a ON ft.assessment_id = a.id
+                     WHERE ft.id = $1`, [threadId]);
+
                 if (threadResult.rows.length === 0) {
                     return { statusCode: 404, body: JSON.stringify({ error: "Thread not found" }) };
                 }
@@ -30,7 +35,13 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
                 const thread = { ...threadResult.rows[0], messages: messagesResult.rows };
                 return { statusCode: 200, body: JSON.stringify(thread) };
             }
-            const result = await client.query('SELECT * FROM forum_threads ORDER BY last_reply_at DESC');
+            
+            const result = await client.query(
+                `SELECT ft.*, a.project_name as assessment_name 
+                 FROM forum_threads ft
+                 LEFT JOIN assessments a ON ft.assessment_id = a.id
+                 ORDER BY ft.last_reply_at DESC`
+            );
             return { statusCode: 200, body: JSON.stringify(result.rows) };
         }
 
@@ -39,7 +50,7 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
             if (!user) return { statusCode: 401, body: JSON.stringify({ error: 'You must be logged in to create a thread.' }) };
             if (!body) return { statusCode: 400, body: JSON.stringify({ error: 'Request body is missing' }) };
 
-            const { title, content } = JSON.parse(body);
+            const { title, content, assessment_id } = JSON.parse(body);
             if (!title || !content) {
                 return { statusCode: 400, body: JSON.stringify({ error: 'Missing title or content' }) };
             }
@@ -53,10 +64,10 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
 
             await client.query('BEGIN');
             const threadResult = await client.query(
-                `INSERT INTO forum_threads (title, author, reply_count, last_reply_at, created_at)
-                 VALUES ($1, $2, 1, NOW(), NOW())
+                `INSERT INTO forum_threads (title, author, reply_count, last_reply_at, created_at, assessment_id)
+                 VALUES ($1, $2, 1, NOW(), NOW(), $3)
                  RETURNING *`,
-                [title, author]
+                [title, author, assessment_id]
             );
             const newThread = threadResult.rows[0];
             await client.query(
