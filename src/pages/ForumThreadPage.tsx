@@ -65,8 +65,13 @@ export const ForumThreadPage: React.FC = () => {
     setIsPosting(true);
     try {
         const postedMessage = await addMessageToThread(threadId, newMessage);
-        if (postedMessage) {
+        if (postedMessage && thread) {
             setMessages(prev => [...prev, postedMessage]);
+             setThread(prevThread => prevThread ? ({
+                ...prevThread,
+                reply_count: prevThread.reply_count + 1,
+                last_reply_at: postedMessage.created_at,
+            }) : null);
             setNewMessage('');
         }
     } catch (err) {

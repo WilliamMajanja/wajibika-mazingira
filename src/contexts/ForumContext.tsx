@@ -60,7 +60,9 @@ export const ForumProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             const err = await response.json();
             throw new Error(err.error || 'Failed to create thread.');
         }
-        await fetchThreads(); // refetch all threads to update list
+        const newThread: ForumThread = await response.json();
+        // The new thread has the latest `last_reply_at`, so it goes to the top.
+        setThreads(prev => [newThread, ...prev]);
     } catch(err: any) {
         setError(err.message);
         throw err;
@@ -108,11 +110,13 @@ export const ForumProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             throw new Error(err.error || 'Failed to add message.');
         }
         
+        const newMessage: ForumMessage = await response.json();
+
         setThreads(prevThreads => prevThreads.map(t => 
-            t.id === threadId ? { ...t, reply_count: t.reply_count + 1, last_reply_at: new Date().toISOString() } : t
+            t.id === threadId ? { ...t, reply_count: t.reply_count + 1, last_reply_at: newMessage.created_at } : t
         ).sort((a,b) => new Date(b.last_reply_at || b.created_at).getTime() - new Date(a.last_reply_at || a.created_at).getTime()));
         
-        return await response.json();
+        return newMessage;
     } catch (err: any) {
         setError(err.message);
         throw err;
