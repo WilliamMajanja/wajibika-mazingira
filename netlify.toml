@@ -1,5 +1,5 @@
 # This file configures the build and deployment settings for Netlify.
-# It is the key to connecting the frontend application to the backend serverless functions.
+# It is the key to connecting the frontend to the backend serverless functions.
 
 [build]
   # Specifies the command to run to build the site.
@@ -8,9 +8,20 @@
   # Specifies the directory containing the deploy-ready assets.
   publish = "dist"
   
-  # CRITICAL: Explicitly tells Netlify where to find the serverless functions.
-  # This was the likely missing piece causing previous 404 errors.
+  # Explicitly tells Netlify where to find the serverless functions.
   functions = "netlify/functions"
+
+# This section increases the execution time for the specified function.
+# The default is 10 seconds. We're increasing it to 26 seconds to prevent
+# timeouts when the AI needs more time to generate a detailed report.
+[functions."generate-assessment"]
+[functions."assessments"]
+[functions."config"]
+[functions."evidence"]
+[functions."forum-messages"]
+[functions."forum-threads"]
+[functions."generate-assessment"]
+  timeout = 26
 
 [dev]
   # Configuration for the `netlify dev` local development command.
