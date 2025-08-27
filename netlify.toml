@@ -1,0 +1,40 @@
+# Netlify configuration file
+
+# This block defines the build settings for your site.
+[build]
+  # The command to build your site. For Vite, it's `npm run build`.
+  command = "npm run build"
+  
+  # The directory that contains the built site. Vite's default is `dist`.
+  publish = "dist"
+  
+  # The directory where your serverless functions are located.
+  functions = "netlify/functions"
+
+# This block configures the local development server (`netlify dev`).
+[dev]
+  # The command to start your frontend development server.
+  command = "npm run dev"
+  
+  # The port your frontend server runs on. Vite's default is 5173.
+  port = 5173
+  
+  # The port for the Netlify Dev server to listen on.
+  # This is the port you will access in your browser (e.g., http://localhost:8888).
+  frameworkPort = 8888
+
+# Redirect and proxy rules.
+[[redirects]]
+  # Proxy all requests to /api/* to your Netlify functions.
+  # This allows your frontend to call functions with a simple relative path.
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+[[redirects]]
+  # This rule is for Single Page Applications (SPA).
+  # It ensures that any direct navigation to a client-side route
+  # (e.g., /dashboard) is handled by your React app.
+  from = "/*"
+  to = "/index.html"
+  status = 200
