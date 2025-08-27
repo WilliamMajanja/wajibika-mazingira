@@ -1,15 +1,18 @@
 
+
 import { AssessmentReport, AssessmentType } from "../types";
 
 export const generateAssessmentReport = async (
     assessmentType: AssessmentType,
     projectName: string,
     projectLocation: string,
-    projectDescription: string
+    projectDescription: string,
+    accessToken: string
 ): Promise<AssessmentReport> => {
     try {
         const headers: HeadersInit = {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
         };
 
         const response = await fetch('/api/generate-assessment', {

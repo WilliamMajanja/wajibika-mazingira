@@ -37,7 +37,7 @@ export const Dashboard: React.FC = () => {
       setTitle('Dashboard');
   }, [setTitle]);
   
-  const userName = user?.name?.split(' ')[0] || user?.nickname || user?.email || 'Practitioner';
+  const userName = user?.name || user?.email || 'Practitioner';
   
   const handleManualSubmit = async (
     projectDetails: { name: string; location: string; assessmentType: AssessmentType },

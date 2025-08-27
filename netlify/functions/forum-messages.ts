@@ -25,7 +25,11 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
 
         if (httpMethod === 'POST') {
             const user = context.clientContext?.user;
-            if (!user) return { statusCode: 401, body: JSON.stringify({ error: 'You must be logged in to interact.' }) };
+            if (!user) {
+                console.error("Authentication error in 'forum-messages POST': context.clientContext.user is missing. This could be due to a misconfigured JWT secret in Netlify's settings.");
+                console.log("Client context:", JSON.stringify(context.clientContext, null, 2));
+                return { statusCode: 401, body: JSON.stringify({ error: 'Authentication failed. You must be logged in to interact with the forum.' }) };
+            }
             if (!body) return { statusCode: 400, body: JSON.stringify({ error: 'Request body is missing' }) };
 
             const payload = JSON.parse(body);

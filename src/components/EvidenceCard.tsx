@@ -5,6 +5,7 @@ import { GlobeAltIcon } from './icons/GlobeAltIcon';
 import { ArrowDownTrayIcon } from './icons/ArrowDownTrayIcon';
 import { Spinner } from './common/Spinner';
 import { XMarkIcon } from './icons/XMarkIcon';
+import { useEvidence } from '../contexts/EvidenceContext';
 
 export const EvidenceCard: React.FC<{evidence: Evidence}> = ({ evidence: initialEvidence }) => {
   const [fullEvidence, setFullEvidence] = useState<Evidence | null>(null);
@@ -12,6 +13,7 @@ export const EvidenceCard: React.FC<{evidence: Evidence}> = ({ evidence: initial
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const { getEvidenceById } = useEvidence();
 
   const hasFile = !!initialEvidence.file_mime_type;
   const isImage = hasFile && initialEvidence.file_mime_type!.startsWith('image/');
@@ -22,9 +24,8 @@ export const EvidenceCard: React.FC<{evidence: Evidence}> = ({ evidence: initial
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/evidence?id=${initialEvidence.id}`);
-      if (!response.ok) throw new Error("File could not be loaded.");
-      const data: Evidence = await response.json();
+      const data = await getEvidenceById(initialEvidence.id);
+      if (!data) throw new Error("File could not be loaded or permission denied.");
       setFullEvidence(data);
       return data;
     } catch (err: any) {

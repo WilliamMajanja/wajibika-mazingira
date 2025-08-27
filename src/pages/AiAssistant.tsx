@@ -56,6 +56,7 @@ const EvidenceSelectionModal: React.FC<{
 export const AiAssistant: React.FC = () => {
     const { user } = useAuth();
     const { setTitle } = useLayout();
+    const { summarizeEvidence } = useEvidence();
     
     const [messages, setMessages] = useState<ChatMessage[]>(() => {
         try {
@@ -96,25 +97,18 @@ export const AiAssistant: React.FC = () => {
         setIsLoading(true);
         setError(null);
         
-        const userMessage: ChatMessage = { role: 'user', content: `Please summarize the evidence document with ID: ${evidenceId}` };
+        const userMessage: ChatMessage = { role: 'user', content: `Please summarize the selected evidence document.` };
         const historyBeforeRequest = [...messages];
         
         // Optimistically update UI
         setMessages(prev => [...prev, userMessage, { role: 'model', content: '' }]);
 
         try {
-            const response = await fetch('/api/evidence', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'summarize', evidenceId })
-            });
-
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Failed to get summary.');
+            const summary = await summarizeEvidence(evidenceId);
 
             setMessages(prev => {
                 const updated = [...prev];
-                updated[updated.length - 1].content = data.summary;
+                updated[updated.length - 1].content = summary;
                 return updated;
             });
 

@@ -22,7 +22,9 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
     try {
         if (httpMethod === 'GET') {
             if (!user) {
-                return { statusCode: 401, body: JSON.stringify({ error: 'You must be logged in to view assessments.' }) };
+                console.error("Authentication error in 'assessments GET': context.clientContext.user is missing. This could be due to a misconfigured JWT secret in Netlify's settings.");
+                console.log("Client context:", JSON.stringify(context.clientContext, null, 2));
+                return { statusCode: 401, body: JSON.stringify({ error: 'Authentication failed. You must be logged in to view assessments.' }) };
             }
 
             const { id } = queryStringParameters || {};
@@ -49,7 +51,9 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
 
         if (httpMethod === 'POST') {
              if (!user) {
-                return { statusCode: 401, body: JSON.stringify({ error: 'You must be logged in to create an assessment.' }) };
+                console.error("Authentication error in 'assessments POST': context.clientContext.user is missing. This could be due to a misconfigured JWT secret in Netlify's settings.");
+                console.log("Client context:", JSON.stringify(context.clientContext, null, 2));
+                return { statusCode: 401, body: JSON.stringify({ error: 'Authentication failed. You must be logged in to create an assessment.' }) };
             }
             if (!body) {
                 return { statusCode: 400, body: JSON.stringify({ error: 'Request body is missing' }) };

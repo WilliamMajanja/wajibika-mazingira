@@ -1,4 +1,4 @@
-import type { Handler, HandlerEvent } from "@netlify/functions";
+import type { Handler, HandlerEvent, HandlerContext } from "@netlify/functions";
 import { GoogleGenAI, Type } from "@google/genai";
 
 // Re-defining constants and types here to keep the function self-contained
@@ -82,9 +82,14 @@ const cleanJsonString = (rawText: string): string => {
     return jsonText;
 }
 
-export const handler: Handler = async (event: HandlerEvent) => {
+export const handler: Handler = async (event: HandlerEvent, context: HandlerContext) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
+  }
+
+  const user = context.clientContext?.user;
+  if (!user) {
+      return { statusCode: 401, body: JSON.stringify({ error: 'You must be logged in to generate an assessment.' }) };
   }
   
   const apiKey = process.env.API_KEY;

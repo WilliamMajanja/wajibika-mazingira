@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Evidence } from '../types';
+import { useAuth } from './AuthContext';
 
 interface EvidenceContextType {
   evidence: Evidence[]; // This will now hold only general (non-assessment-linked) evidence
@@ -7,12 +8,14 @@ interface EvidenceContextType {
   error: string | null;
   addEvidence: (newEvidence: Omit<Evidence, 'id' | 'submitted_at'>) => Promise<Evidence>;
   getEvidenceForAssessment: (assessmentId: string) => Promise<Evidence[]>;
+  getEvidenceById: (evidenceId: string) => Promise<Evidence | null>;
   summarizeEvidence: (evidenceId: string) => Promise<string>;
 }
 
 const EvidenceContext = createContext<EvidenceContextType | undefined>(undefined);
 
 export const EvidenceProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { getAccessToken, isAuthenticated } = useAuth();
   const [evidence, setEvidence] = useState<Evidence[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,11 +45,14 @@ export const EvidenceProvider: React.FC<{ children: ReactNode }> = ({ children }
   }, []);
 
   const addEvidence = async (newEvidenceData: Omit<Evidence, 'id' | 'submitted_at'>): Promise<Evidence> => {
+    if (!isAuthenticated) throw new Error("User not authenticated.");
     try {
+      const token = await getAccessToken();
       const response = await fetch('/api/evidence', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(newEvidenceData),
       });
@@ -72,8 +78,12 @@ export const EvidenceProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   const getEvidenceForAssessment = async (assessmentId: string): Promise<Evidence[]> => {
-     try {
-        const response = await fetch(`/api/evidence?assessment_id=${assessmentId}`);
+    if (!isAuthenticated) return [];
+    try {
+        const token = await getAccessToken();
+        const response = await fetch(`/api/evidence?assessment_id=${assessmentId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ error: 'Failed to fetch evidence.' }));
             throw new Error(errorData.error);
@@ -85,11 +95,36 @@ export const EvidenceProvider: React.FC<{ children: ReactNode }> = ({ children }
         return [];
     }
   };
+
+  const getEvidenceById = async (evidenceId: string): Promise<Evidence | null> => {
+     try {
+        const token = isAuthenticated ? await getAccessToken() : null;
+        const headers: HeadersInit = {};
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+        const response = await fetch(`/api/evidence?id=${evidenceId}`, { headers });
+        if (response.status === 404) return null;
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: 'Failed to fetch evidence.' }));
+            throw new Error(errorData.error);
+        }
+        return await response.json();
+    } catch (e: any) {
+        console.error("Failed to fetch evidence by ID:", e);
+        return null;
+    }
+  };
   
   const summarizeEvidence = async (evidenceId: string): Promise<string> => {
+      if (!isAuthenticated) throw new Error("User not authenticated.");
+      const token = await getAccessToken();
       const response = await fetch('/api/evidence', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
           body: JSON.stringify({ action: 'summarize', evidenceId })
       });
 
@@ -106,6 +141,7 @@ export const EvidenceProvider: React.FC<{ children: ReactNode }> = ({ children }
     error,
     addEvidence,
     getEvidenceForAssessment,
+    getEvidenceById,
     summarizeEvidence,
   };
 

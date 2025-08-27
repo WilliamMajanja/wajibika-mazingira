@@ -1,6 +1,8 @@
-import type { Handler, HandlerEvent } from "@netlify/functions";
+import type { Handler, HandlerEvent, HandlerContext } from "@netlify/functions";
 import { getPool } from "../lib/db";
 import { GoogleGenAI } from "@google/genai";
+// FIX: Import Buffer to resolve TypeScript error 'Cannot find name 'Buffer''.
+import { Buffer } from "buffer";
 
 const GEMINI_MODEL = 'gemini-2.5-flash';
 
@@ -17,7 +19,7 @@ const summarizeEvidence = async (apiKey: string, evidenceText: string): Promise<
 }
 
 
-export const handler: Handler = async (event: HandlerEvent) => {
+export const handler: Handler = async (event: HandlerEvent, context: HandlerContext) => {
     const pool = getPool();
     if (!pool) {
         console.error("DATABASE_URL is not configured.");
@@ -30,23 +32,37 @@ export const handler: Handler = async (event: HandlerEvent) => {
 
     const { httpMethod, body, queryStringParameters } = event;
     const client = await pool.connect();
+    const user = context.clientContext?.user;
 
     try {
         if (httpMethod === 'GET') {
             const { id, assessment_id } = queryStringParameters || {};
             
             if (id) {
-                // Fetch a single, complete evidence item
-                const result = await client.query('SELECT * FROM evidence WHERE id = $1', [id]);
+                // Fetch a single, complete evidence item, checking permissions.
+                // It's public if assessment_id is NULL. If not, user must own the assessment.
+                const result = await client.query(
+                    `SELECT e.* FROM evidence e
+                     LEFT JOIN assessments a ON e.assessment_id = a.id
+                     WHERE e.id = $1 AND (e.assessment_id IS NULL OR a.user_id = $2)`,
+                    [id, user?.sub]
+                );
                 if (result.rows.length === 0) {
-                    return { statusCode: 404, body: JSON.stringify({ error: "Evidence not found" }) };
+                    return { statusCode: 404, body: JSON.stringify({ error: "Evidence not found or permission denied" }) };
                 }
                 return { statusCode: 200, body: JSON.stringify(result.rows[0]) };
+
             } else if (assessment_id) {
-                 // Fetch all evidence for a specific assessment
+                if (!user) {
+                    return { statusCode: 401, body: JSON.stringify({ error: 'You must be logged in to view assessment evidence.' }) };
+                }
+                // Fetch all evidence for a specific assessment, ensuring user owns the assessment
                 const result = await client.query(
-                    'SELECT * FROM evidence WHERE assessment_id = $1 ORDER BY submitted_at DESC',
-                    [assessment_id]
+                    `SELECT e.* FROM evidence e
+                     JOIN assessments a ON e.assessment_id = a.id
+                     WHERE e.assessment_id = $1 AND a.user_id = $2
+                     ORDER BY e.submitted_at DESC`,
+                    [assessment_id, user.sub]
                 );
                 return { statusCode: 200, body: JSON.stringify(result.rows) };
             } else {
@@ -59,6 +75,11 @@ export const handler: Handler = async (event: HandlerEvent) => {
         }
 
         if (httpMethod === 'POST') {
+            if (!user) {
+                console.error("Authentication error in 'evidence POST': context.clientContext.user is missing. User must be logged in to submit or summarize evidence.");
+                return { statusCode: 401, body: JSON.stringify({ error: 'You must be logged in to perform this action.' }) };
+            }
+
             if (!body) {
                 return { statusCode: 400, body: JSON.stringify({ error: 'Request body is missing' }) };
             }
@@ -71,10 +92,17 @@ export const handler: Handler = async (event: HandlerEvent) => {
                  if (!apiKey) {
                      return { statusCode: 500, body: JSON.stringify({ error: "AI service not configured." }) };
                  }
-                const evidenceResult = await client.query('SELECT file_content, file_mime_type FROM evidence WHERE id = $1', [payload.evidenceId]);
+                // Check that user has permission to summarize this evidence
+                const evidenceResult = await client.query(
+                    `SELECT e.file_content, e.file_mime_type FROM evidence e
+                     LEFT JOIN assessments a ON e.assessment_id = a.id
+                     WHERE e.id = $1 AND (e.assessment_id IS NULL OR a.user_id = $2)`,
+                    [payload.evidenceId, user.sub]
+                );
                 if (evidenceResult.rows.length === 0) {
-                    return { statusCode: 404, body: JSON.stringify({ error: 'Evidence not found.' }) };
+                    return { statusCode: 404, body: JSON.stringify({ error: 'Evidence not found or you do not have permission to access it.' }) };
                 }
+
                 const evidence = evidenceResult.rows[0];
                 if (!evidence.file_content || !evidence.file_mime_type?.startsWith('text')) {
                      return { statusCode: 400, body: JSON.stringify({ error: 'Summarization is only available for text-based files.' }) };

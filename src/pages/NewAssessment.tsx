@@ -8,6 +8,7 @@ import { ManualAssessmentModal } from '../components/ManualAssessmentModal';
 import { useAssessments } from '../contexts/AssessmentContext';
 import { useEvidence } from '../contexts/EvidenceContext';
 import { useLayout } from '../contexts/LayoutContext';
+import { useAuth } from '../contexts/AuthContext';
 
 // --- Helper Components defined in-file to avoid creating new files ---
 
@@ -66,6 +67,7 @@ export const NewAssessment: React.FC = () => {
   const { createAIAssessment } = useAssessments();
   const { addEvidence } = useEvidence();
   const { setTitle } = useLayout();
+  const { getAccessToken } = useAuth();
 
   // Wizard State
   const [step, setStep] = useState(1);
@@ -107,11 +109,13 @@ export const NewAssessment: React.FC = () => {
 
     try {
       // 1. Generate the main AI report
+      const token = await getAccessToken();
       const report = await generateAssessmentReport(
         assessmentType,
         projectName,
         projectLocation,
-        projectDescription
+        projectDescription,
+        token
       );
       
       // 2. Create the assessment record in the database to get an ID
