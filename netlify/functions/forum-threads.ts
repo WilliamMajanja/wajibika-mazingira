@@ -1,6 +1,8 @@
 import type { Handler, HandlerEvent, HandlerContext } from "@netlify/functions";
 import { getPool } from "../lib/db";
 
+const ROLES_CLAIM = 'https://wajibika.app/roles';
+
 export const handler: Handler = async (event: HandlerEvent, context: HandlerContext) => {
     const pool = getPool();
     if (!pool) {
@@ -48,10 +50,15 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
         if (httpMethod === 'POST') {
             const user = context.clientContext?.user;
             if (!user) {
-                console.error("Authentication error in 'forum-threads POST': context.clientContext.user is missing. This could be due to a misconfigured JWT secret in Netlify's settings.");
-                console.log("Client context:", JSON.stringify(context.clientContext, null, 2));
                 return { statusCode: 401, body: JSON.stringify({ error: 'Authentication failed. You must be logged in to create a thread.' }) };
             }
+
+            // Role-based access control check
+            const roles = user[ROLES_CLAIM] || [];
+            if (!roles.includes('Practitioner') && !roles.includes('Admin')) {
+                return { statusCode: 403, body: JSON.stringify({ error: 'You do not have permission to create a discussion thread.' }) };
+            }
+
             if (!body) return { statusCode: 400, body: JSON.stringify({ error: 'Request body is missing' }) };
 
             const { title, content, assessment_id } = JSON.parse(body);
@@ -59,10 +66,9 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
                 return { statusCode: 400, body: JSON.stringify({ error: 'Missing title or content' }) };
             }
 
-            // Construct the author object from the standard JWT claims.
             const author = {
                 id: user.sub,
-                name: user.name || user.email, // Fallback to email if name is not present
+                name: user.name || user.email,
                 picture: user.picture
             };
 

@@ -10,6 +10,7 @@
 - **Community Forum**: A dedicated space for practitioners, officials, and the public to discuss environmental issues, share knowledge, and collaborate.
 - **Public Evidence Locker**: A platform for anyone to submit evidence of environmental incidents—including images and documents—creating a public record for accountability.
 - **AI Legal Assistant**: An interactive chat assistant trained to answer questions specifically about Kenyan environmental legislation.
+- **Role-Based Access Control**: Securely managed permissions for different user types (e.g., Practitioners can create assessments, while public users have read-only access).
 - **Secure Authentication**: User management is handled securely via Auth0, supporting social logins and modern security standards.
 - **Resource Hub**: A curated list of links to key Kenyan environmental bodies and legal resources.
 
@@ -79,7 +80,32 @@ DATABASE_URL="postgresql://user:password@host/dbname"
 API_KEY="your-google-api-key"
 ```
 
-### 4. Set Up the Database Schema
+### 4. Set Up User Roles in Auth0 (Required for Full Functionality)
+
+The application supports role-based access control (`Practitioner`, `Admin`). To enable this:
+
+1.  **Enable RBAC**: In your Auth0 API settings (under *Applications > APIs*), find your API and go to the "Settings" tab. Ensure "Enable RBAC" and "Add Permissions in the Access Token" are turned on.
+2.  **Create Roles**: In the Auth0 dashboard, go to *User Management > Roles* and create the roles `Practitioner` and `Admin`.
+3.  **Assign Roles to Users**: Assign the desired roles to your users under *User Management > Users*.
+4.  **Add Roles to Access Token**: Create an **Action** to add roles to the access token. Go to *Actions > Library*, click *Build Custom*, and create a new action with the following code:
+
+    ```javascript
+    /**
+     * @param {Event} event - Details about the user and the context in which they are logging in.
+     * @param {PostLoginAPI} api - Interface whose methods can be used to change the behavior of the login transaction.
+     */
+    exports.onExecutePostLogin = async (event, api) => {
+      const namespace = 'https://wajibika.app'; // Must match ROLES_CLAIM in src/constants.ts
+      if (event.authorization) {
+        api.accessToken.setCustomClaim(`${namespace}/roles`, event.authorization.roles);
+      }
+    };
+    ```
+
+5.  **Deploy the Action**: Deploy the action.
+6.  **Add to Login Flow**: Go to *Actions > Flows > Login*, and drag your newly created action into the flow between "Start" and "Complete".
+
+### 5. Set Up the Database Schema
 
 Connect to your Neon database using the provided SQL editor in your Neon dashboard. Run the following SQL script to create the necessary tables for the application.
 
@@ -135,7 +161,7 @@ CREATE TABLE forum_messages (
 );
 ```
 
-### 5. Run the Development Server
+### 6. Run the Development Server
 
 The `netlify dev` command starts both the Vite frontend server and the Netlify Functions server, creating a development experience that mirrors the production environment.
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { AssessmentCard } from '../components/AssessmentCard';
 import { Button } from '../components/common/Button';
@@ -11,6 +11,8 @@ import { useEvidence } from '../contexts/EvidenceContext';
 import { useLayout } from '../contexts/LayoutContext';
 import { ManualAssessmentModal } from '../components/ManualAssessmentModal';
 import { AssessmentType, ManualFormData } from '../types';
+import { MagnifyingGlassIcon } from '../components/icons/MagnifyingGlassIcon';
+import { ROLES } from '../constants';
 
 
 const StatCard: React.FC<{icon: React.ReactNode, title: string, value: string | number, linkTo: string}> = ({icon, title, value, linkTo}) => (
@@ -25,17 +27,45 @@ const StatCard: React.FC<{icon: React.ReactNode, title: string, value: string | 
     </Link>
 )
 
+type SortOrder = 'date-desc' | 'date-asc' | 'name-asc' | 'name-desc';
 
 export const Dashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
   const { assessments, isLoading: assessmentsLoading, error, createManualAssessment } = useAssessments();
   const { evidence, isLoading: evidenceLoading } = useEvidence();
   const { setTitle } = useLayout();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('date-desc');
 
   useEffect(() => {
       setTitle('Dashboard');
   }, [setTitle]);
+
+  const filteredAndSortedAssessments = useMemo(() => {
+    const lowercasedTerm = searchTerm.toLowerCase();
+    const filtered = searchTerm.trim()
+      ? assessments.filter(
+          (assessment) =>
+            assessment.project_name.toLowerCase().includes(lowercasedTerm) ||
+            assessment.location.toLowerCase().includes(lowercasedTerm)
+        )
+      : [...assessments]; // Create a new array to avoid mutating the original
+
+    return filtered.sort((a, b) => {
+        switch (sortOrder) {
+            case 'name-asc':
+                return a.project_name.localeCompare(b.project_name);
+            case 'name-desc':
+                return b.project_name.localeCompare(a.project_name);
+            case 'date-asc':
+                return new Date(a.date).getTime() - new Date(b.date).getTime();
+            case 'date-desc':
+            default:
+                return new Date(b.date).getTime() - new Date(a.date).getTime();
+        }
+    });
+  }, [assessments, searchTerm, sortOrder]);
   
   const userName = user?.name || user?.email || 'Practitioner';
   
@@ -84,16 +114,43 @@ export const Dashboard: React.FC = () => {
           />
       </div>
 
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-xl font-semibold text-gray-700">Recent Assessments</h3>
-        <div className="flex items-center gap-2">
-            <Button onClick={() => setIsModalOpen(true)} variant="secondary">
-              Create Manual Record
-            </Button>
-            <Link to="/new-assessment">
-                <Button>Start AI Assessment</Button>
-            </Link>
+       <div className="mb-6 flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-grow">
+            <input
+                type="text"
+                placeholder="Search assessments by name or location..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full p-3 pl-10 border border-gray-300 rounded-lg shadow-sm focus:ring-brand-green-light focus:border-brand-green-light"
+                aria-label="Search assessments"
+            />
+            <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
         </div>
+        <select
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value as SortOrder)}
+            className="p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-brand-green-light focus:border-brand-green-light bg-white"
+            aria-label="Sort assessments"
+        >
+            <option value="date-desc">Sort by Newest First</option>
+            <option value="date-asc">Sort by Oldest First</option>
+            <option value="name-asc">Sort by Name (A-Z)</option>
+            <option value="name-desc">Sort by Name (Z-A)</option>
+        </select>
+      </div>
+
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-xl font-semibold text-gray-700">{searchTerm ? 'Search Results' : 'Recent Assessments'}</h3>
+        {hasRole([ROLES.PRACTITIONER, ROLES.ADMIN]) && (
+            <div className="flex items-center gap-2">
+                <Button onClick={() => setIsModalOpen(true)} variant="secondary">
+                  Create Manual Record
+                </Button>
+                <Link to="/new-assessment">
+                    <Button>Start AI Assessment</Button>
+                </Link>
+            </div>
+        )}
       </div>
       
       {error && (
@@ -104,25 +161,36 @@ export const Dashboard: React.FC = () => {
           </div>
       )}
 
-      {!error && assessmentsLoading && (
+      {assessmentsLoading && (
         <div className="text-center py-12 bg-white rounded-lg shadow-sm">
            <h4 className="text-lg font-medium text-gray-700">Loading assessments...</h4>
         </div>
       )}
 
-      {!error && !assessmentsLoading && assessments.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {assessments.slice(0, 6).map(assessment => (
-            <AssessmentCard key={assessment.id} assessment={assessment} />
-          ))}
-        </div>
-      )}
-
-      {!error && !assessmentsLoading && assessments.length === 0 && (
-        <div className="text-center py-12 bg-white rounded-lg shadow-sm">
-          <h4 className="text-lg font-medium text-gray-700">No assessments found.</h4>
-          <p className="text-gray-500 mt-2">Get started by creating your first impact assessment.</p>
-        </div>
+      {!error && !assessmentsLoading && (
+        <>
+          {assessments.length > 0 ? (
+            <>
+              {filteredAndSortedAssessments.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredAndSortedAssessments.map(assessment => (
+                    <AssessmentCard key={assessment.id} assessment={assessment} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 bg-white rounded-lg shadow-sm">
+                  <h4 className="text-lg font-medium text-gray-700">No Assessments Found</h4>
+                  <p className="text-gray-500 mt-2">Your search for "{searchTerm}" did not match any assessments.</p>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="text-center py-12 bg-white rounded-lg shadow-sm">
+              <h4 className="text-lg font-medium text-gray-700">No assessments found.</h4>
+              <p className="text-gray-500 mt-2">Get started by creating your first impact assessment.</p>
+            </div>
+          )}
+        </>
       )}
       
        <ManualAssessmentModal

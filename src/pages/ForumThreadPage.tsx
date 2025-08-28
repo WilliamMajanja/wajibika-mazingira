@@ -6,6 +6,7 @@ import { Button } from '../components/common/Button';
 import { useAuth } from '../contexts/AuthContext';
 import { UserCircleIcon } from '../components/icons/UserCircleIcon';
 import { useLayout } from '../contexts/LayoutContext';
+import { ROLES } from '../constants';
 
 const ThumbUpIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
@@ -17,7 +18,7 @@ const ThumbUpIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
 export const ForumThreadPage: React.FC = () => {
   const { threadId } = useParams<{ threadId: string }>();
   const { getThreadById, addMessageToThread, toggleMessageLike } = useForum();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, hasRole } = useAuth();
   const { setTitle } = useLayout();
 
   const [thread, setThread] = useState<ForumThread | null>(null);
@@ -121,6 +122,7 @@ export const ForumThreadPage: React.FC = () => {
   }
   
   const threadAuthorName = thread.author?.name || 'Anonymous';
+  const canReply = hasRole([ROLES.PRACTITIONER, ROLES.ADMIN]);
 
   const MessageBubble: React.FC<{ message: ForumMessage }> = ({ message }) => {
     const isAuthor = message.author.id === user?.sub;
@@ -180,12 +182,12 @@ export const ForumThreadPage: React.FC = () => {
           <textarea
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
-            placeholder={isAuthenticated ? "Write your reply..." : "Please log in to post a reply."}
+            placeholder={!isAuthenticated ? "Please log in to post a reply." : canReply ? "Write your reply..." : "You do not have permission to post a reply."}
             className="flex-grow p-3 border border-gray-300 rounded-md shadow-sm focus:ring-brand-green-light focus:border-brand-green-light"
             rows={3}
-            disabled={isPosting || !isAuthenticated}
+            disabled={isPosting || !isAuthenticated || !canReply}
           />
-          <Button type="submit" isLoading={isPosting} disabled={!newMessage.trim() || isPosting || !isAuthenticated}>
+          <Button type="submit" isLoading={isPosting} disabled={!newMessage.trim() || isPosting || !isAuthenticated || !canReply}>
             Post Reply
           </Button>
         </form>

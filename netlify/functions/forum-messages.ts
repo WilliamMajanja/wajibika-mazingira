@@ -1,6 +1,8 @@
 import type { Handler, HandlerEvent, HandlerContext } from "@netlify/functions";
 import { getPool } from "../lib/db";
 
+const ROLES_CLAIM = 'https://wajibika.app/roles';
+
 export const handler: Handler = async (event: HandlerEvent, context: HandlerContext) => {
     const pool = getPool();
     if (!pool) {
@@ -26,15 +28,13 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
         if (httpMethod === 'POST') {
             const user = context.clientContext?.user;
             if (!user) {
-                console.error("Authentication error in 'forum-messages POST': context.clientContext.user is missing. This could be due to a misconfigured JWT secret in Netlify's settings.");
-                console.log("Client context:", JSON.stringify(context.clientContext, null, 2));
                 return { statusCode: 401, body: JSON.stringify({ error: 'Authentication failed. You must be logged in to interact with the forum.' }) };
             }
             if (!body) return { statusCode: 400, body: JSON.stringify({ error: 'Request body is missing' }) };
 
             const payload = JSON.parse(body);
             
-            // --- Route action: Toggle Like ---
+            // --- Route action: Toggle Like (Allowed for any authenticated user) ---
             if (payload.action === 'toggle_like') {
                 const { messageId } = payload;
                 if (!messageId) return { statusCode: 400, body: JSON.stringify({ error: 'Missing messageId' }) };
@@ -51,7 +51,6 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
                 let updatedMessage;
 
                 if (likedBy.includes(userId)) {
-                    // User has liked, so unlike
                     updatedMessage = await client.query(
                         `UPDATE forum_messages
                          SET likes = likes - 1, liked_by = array_remove(liked_by, $1)
@@ -59,7 +58,6 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
                          [userId, messageId]
                     );
                 } else {
-                    // User has not liked, so like
                     updatedMessage = await client.query(
                         `UPDATE forum_messages
                          SET likes = likes + 1, liked_by = array_append(liked_by, $1)
@@ -71,7 +69,12 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
                 return { statusCode: 200, body: JSON.stringify(updatedMessage.rows[0]) };
             }
 
-            // --- Default action: Create Message ---
+            // --- Default action: Create Message (Requires Practitioner or Admin role) ---
+            const roles = user[ROLES_CLAIM] || [];
+            if (!roles.includes('Practitioner') && !roles.includes('Admin')) {
+                return { statusCode: 403, body: JSON.stringify({ error: 'You do not have permission to post a reply.' }) };
+            }
+
             const { threadId, content } = payload;
             if (!threadId || !content) {
                 return { statusCode: 400, body: JSON.stringify({ error: 'Missing threadId or content' }) };

@@ -7,10 +7,11 @@ import { ForumThreadCard } from '../components/ForumThreadCard';
 import { NewThreadModal } from '../components/NewThreadModal';
 import { useLayout } from '../contexts/LayoutContext';
 import { useAuth } from '../contexts/AuthContext';
+import { ROLES } from '../constants';
 
 export const CommunityForum: React.FC = () => {
   const { threads, isLoading, error, createThread } = useForum();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, hasRole } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { setTitle } = useLayout();
 
@@ -35,7 +36,7 @@ export const CommunityForum: React.FC = () => {
             <UsersIcon className="h-8 w-8 text-brand-green-light" />
             <h2 className="text-3xl font-bold text-gray-800 ml-3">Community Forum</h2>
         </div>
-        {isAuthenticated && (
+        {isAuthenticated && hasRole([ROLES.PRACTITIONER, ROLES.ADMIN]) && (
           <Button onClick={() => setIsModalOpen(true)}>
               Start New Discussion
           </Button>

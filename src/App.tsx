@@ -16,6 +16,8 @@ import { EvidenceProvider } from './contexts/EvidenceContext';
 import { ForumProvider } from './contexts/ForumContext';
 import { ForumThreadPage } from './pages/ForumThreadPage';
 import { LayoutProvider } from './contexts/LayoutContext';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import { ROLES } from './constants';
 
 const AppProviders: React.FC<{children: React.ReactNode}> = ({ children }) => (
     <AssessmentProvider>
@@ -51,7 +53,14 @@ const AppContent: React.FC = () => {
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/new-assessment" element={<NewAssessment />} />
+          <Route 
+            path="/new-assessment" 
+            element={
+              <ProtectedRoute allowedRoles={[ROLES.PRACTITIONER, ROLES.ADMIN]}>
+                <NewAssessment />
+              </ProtectedRoute>
+            } 
+          />
           <Route path="/assessment/:id" element={<AssessmentDetail />} />
           <Route path="/evidence-locker" element={<EvidenceLocker />} />
           <Route path="/community-forum/:threadId" element={<ForumThreadPage />} />

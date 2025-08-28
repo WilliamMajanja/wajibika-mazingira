@@ -6,9 +6,10 @@ import { LogoutIcon } from './icons/LogoutIcon';
 import { UserCircleIcon } from './icons/UserCircleIcon';
 import { CogIcon } from './icons/CogIcon';
 import { useLayout } from '../contexts/LayoutContext';
+import { ROLES } from '../constants';
 
 export const Header: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, roles } = useAuth();
   const { title, toggleSidebar } = useLayout();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -26,6 +27,17 @@ export const Header: React.FC = () => {
   if (!user) {
     return null;
   }
+
+  const getRoleColor = (role: string): string => {
+    switch (role) {
+        case ROLES.ADMIN:
+            return 'bg-yellow-100 text-yellow-800 ring-1 ring-inset ring-yellow-600/20';
+        case ROLES.PRACTITIONER:
+            return 'bg-blue-100 text-blue-800 ring-1 ring-inset ring-blue-700/10';
+        default:
+            return 'bg-gray-100 text-gray-700 ring-1 ring-inset ring-gray-500/10';
+    }
+  };
 
   const userName = user.name || user.email;
   const userAvatar = user.picture;
@@ -52,7 +64,17 @@ export const Header: React.FC = () => {
             aria-haspopup="true"
             aria-expanded={dropdownOpen}
           >
-            <span className="text-gray-700 font-medium hidden md:block">{userName}</span>
+            <div className="flex items-center gap-2">
+                <span className="text-gray-700 font-medium hidden md:block">{userName}</span>
+                <div className="hidden md:flex items-center gap-1.5">
+                    {roles.map(role => (
+                        <span key={role} className={`px-2 py-0.5 text-xs font-semibold rounded-full ${getRoleColor(role)}`}>
+                            {role}
+                        </span>
+                    ))}
+                </div>
+            </div>
+
             {userAvatar ? (
               <img
                 src={userAvatar}
@@ -70,6 +92,19 @@ export const Header: React.FC = () => {
               <div className="px-4 py-2 border-b">
                 <p className="text-sm font-semibold text-gray-800 truncate">{userName}</p>
                 <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                    {roles.length > 0 ? (
+                        roles.map(role => (
+                            <span key={role} className={`px-2 py-0.5 text-xs font-semibold rounded-full ${getRoleColor(role)}`}>
+                                {role}
+                            </span>
+                        ))
+                    ) : (
+                        <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-600 ring-1 ring-inset ring-gray-500/10">
+                            Public
+                        </span>
+                    )}
+                </div>
               </div>
               <Link
                 to="/settings"

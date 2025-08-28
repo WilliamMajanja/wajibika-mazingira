@@ -1,6 +1,8 @@
 import type { Handler, HandlerEvent, HandlerContext } from "@netlify/functions";
 import { getPool } from '../lib/db';
 
+const ROLES_CLAIM = 'https://wajibika.app/roles';
+
 export const handler: Handler = async (event: HandlerEvent, context: HandlerContext) => {
     const pool = getPool();
     if (!pool) {
@@ -15,8 +17,6 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
     const { httpMethod, body, queryStringParameters } = event;
     const client = await pool.connect();
 
-    // Securely get user information from the context provided by Netlify's JWT-based access control.
-    // This now works with Auth0 tokens if configured in the Netlify UI.
     const user = context.clientContext?.user;
 
     try {
@@ -51,10 +51,15 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
 
         if (httpMethod === 'POST') {
              if (!user) {
-                console.error("Authentication error in 'assessments POST': context.clientContext.user is missing. This could be due to a misconfigured JWT secret in Netlify's settings.");
-                console.log("Client context:", JSON.stringify(context.clientContext, null, 2));
                 return { statusCode: 401, body: JSON.stringify({ error: 'Authentication failed. You must be logged in to create an assessment.' }) };
             }
+
+            // Role-based access control check
+            const roles = user[ROLES_CLAIM] || [];
+            if (!roles.includes('Practitioner') && !roles.includes('Admin')) {
+                return { statusCode: 403, body: JSON.stringify({ error: 'You do not have permission to create an assessment.' }) };
+            }
+
             if (!body) {
                 return { statusCode: 400, body: JSON.stringify({ error: 'Request body is missing' }) };
             }

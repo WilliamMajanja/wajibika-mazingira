@@ -1,7 +1,8 @@
 
-import React, { createContext, useContext, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { Auth0Provider, useAuth0, AppState, User, RedirectLoginOptions } from '@auth0/auth0-react';
 import { useNavigate } from 'react-router-dom';
+import { ROLES_CLAIM } from '../constants';
 
 // Auth0 configuration is loaded from environment variables.
 // These must be set in your project's hosting environment (e.g., Netlify).
@@ -17,6 +18,8 @@ interface AuthContextType {
   login: (options?: RedirectLoginOptions) => void;
   logout: () => void;
   getAccessToken: () => Promise<string>;
+  roles: string[];
+  hasRole: (role: string | string[]) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -67,10 +70,20 @@ const AuthContextualProvider: React.FC<{ children: ReactNode }> = ({ children })
         getAccessTokenSilently 
     } = useAuth0();
 
+    const roles = useMemo(() => {
+        if (user && user[ROLES_CLAIM]) {
+            return (user[ROLES_CLAIM] as string[]) || [];
+        }
+        return [];
+    }, [user]);
+
+    const hasRole = useCallback((requiredRoles: string | string[]): boolean => {
+        if (!isAuthenticated) return false;
+        const rolesToCheck = Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles];
+        return roles.some(role => rolesToCheck.includes(role));
+    }, [isAuthenticated, roles]);
+
     const login = useCallback((options?: RedirectLoginOptions) => {
-        // By default, prompt the user to select an account.
-        // This is useful for social providers like Google to allow account switching,
-        // preventing automatic login with a previously used account.
         loginWithRedirect({
             ...options,
             authorizationParams: {
@@ -81,8 +94,6 @@ const AuthContextualProvider: React.FC<{ children: ReactNode }> = ({ children })
     }, [loginWithRedirect]);
 
     const logout = useCallback(() => {
-        // Perform a federated logout. This logs the user out of the identity provider (e.g., Google)
-        // as well as the application. This is crucial to prevent automatic re-login.
         auth0Logout({ 
             logoutParams: { 
                 returnTo: window.location.origin,
@@ -96,19 +107,19 @@ const AuthContextualProvider: React.FC<{ children: ReactNode }> = ({ children })
             return await getAccessTokenSilently();
         } catch (e) {
             console.error("Error getting access token", e);
-            // Optionally handle this by forcing a re-login
-            // loginWithRedirect();
             return "";
         }
     }, [getAccessTokenSilently]);
 
-    const value = {
+    const value: AuthContextType = {
         user,
         isLoading,
         isAuthenticated,
         login,
         logout,
         getAccessToken,
+        roles,
+        hasRole,
     };
     
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
