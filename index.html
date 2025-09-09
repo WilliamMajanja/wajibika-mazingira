@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wajibika Mazingira</title>
+  
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Tailwind Configuration for custom theme -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'brand-green': {
+              '50': '#f0fdf4',
+              '100': '#dcfce7',
+              '200': '#bbf7d0',
+              '300': '#86efac',
+              '400': '#4ade80',
+              '500': '#22c55e',
+              '600': '#16a34a',
+              '700': '#15803d',
+              '800': '#166534',
+              '900': '#14532d',
+              '950': '#052e16',
+            },
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- ES Module Import Map -->
+  <script type="importmap">
+  {
+    "imports": {
+      "react": "https://aistudiocdn.com/react@^19.1.1",
+      "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
+      "react/": "https://aistudiocdn.com/react@^19.1.1/",
+      "@google/genai": "https://aistudiocdn.com/@google/genai@^1.18.0",
+      "react-markdown": "https://aistudiocdn.com/react-markdown@^10.1.0"
+    }
+  }
+  </script>
+  
+  <style>
+    /* Ensures the custom font and background color are applied correctly */
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f1f5f9; /* slate-100 from theme */
+    }
+  </style>
+
+</head>
+<body>
+  <noscript>You need to enable JavaScript to run this app.</noscript>
+  <div id="root"></div>
+  
+  <!-- Main application script, loaded after the DOM is ready -->
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
