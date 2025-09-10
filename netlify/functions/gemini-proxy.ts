@@ -102,91 +102,100 @@ const getPromptForAssessmentType = (
 
 
 const handler: Handler = async (event: HandlerEvent) => {
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: JSON.stringify({ error: 'Method Not Allowed' }) };
-  }
-
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) {
-    return { statusCode: 500, body: JSON.stringify({ error: 'API_KEY is not configured on the server.' }) };
-  }
-
-  const ai = new GoogleGenAI({ apiKey });
-  const body = JSON.parse(event.body || '{}');
-
-  const readableStream = new ReadableStream({
-    async start(controller) {
-        try {
-            const { type } = body;
-
-            if (type === 'assessment') {
-                const details = body.details as Omit<Assessment, 'id' | 'report' | 'createdAt'>;
-                if (!details || !details.projectName || !details.projectProponent || !details.location || !details.projectType || !details.description) {
-                    throw new Error('Missing required assessment details.');
-                }
-                const prompt = getPromptForAssessmentType(details);
-                const responseStream = await ai.models.generateContentStream({
-                    model: 'gemini-2.5-flash',
-                    contents: prompt,
-                    config: { temperature: 0.5, topP: 0.95 }
-                });
-
-                 for await (const chunk of responseStream) {
-                    const text = chunk.text;
-                    if (text) {
-                        controller.enqueue(new TextEncoder().encode(text));
-                    }
-                }
-
-            } else if (type === 'chat') {
-                const messages = body.messages as { role: 'user' | 'model', text: string }[];
-                if (!messages || !Array.isArray(messages) || messages.length === 0) {
-                     throw new Error('Missing or empty messages array for chat.');
-                }
-                
-                const contents: Content[] = messages.map(msg => ({
-                    role: msg.role,
-                    parts: [{ text: msg.text }]
-                }));
-
-                const responseStream = await ai.models.generateContentStream({
-                    model: 'gemini-2.5-flash',
-                    contents: contents,
-                    config: {
-                        systemInstruction: "You are a helpful assistant for community members in Kenya discussing environmental and social impacts of local projects. Your name is 'Mazingira Rafiki' (Environment Friend). Be polite, informative, and sensitive to local contexts. Encourage constructive dialogue.",
-                    }
-                });
-
-                for await (const chunk of responseStream) {
-                    const text = chunk.text;
-                    if (text) {
-                        controller.enqueue(new TextEncoder().encode(text));
-                    }
-                }
-
-            } else {
-                 throw new Error('Invalid request type.');
-            }
-        } catch (error) {
-            console.error('Error in Gemini proxy function:', error);
-            const message = error instanceof Error ? error.message : 'An internal server error occurred.';
-            controller.enqueue(new TextEncoder().encode(JSON.stringify({ error: message })));
-        } finally {
-            controller.close();
-        }
+  try {
+    if (event.httpMethod !== 'POST') {
+      return { statusCode: 405, body: JSON.stringify({ error: 'Method Not Allowed' }) };
     }
-  });
 
-  return {
-    statusCode: 200,
-    headers: {
-        "Content-Type": "text/plain; charset=utf-8",
-        "X-Content-Type-Options": "nosniff"
-    },
-    // The Netlify runtime supports ReadableStream as a body.
-    // We cast to `any` to satisfy the type checker.
-    body: readableStream as any,
-  };
+    const apiKey = process.env.API_KEY;
+    if (!apiKey) {
+      console.error('API_KEY is not configured on the server.');
+      return { statusCode: 500, body: JSON.stringify({ error: 'API_KEY is not configured on the server.' }) };
+    }
+
+    const body = JSON.parse(event.body || '{}');
+    const ai = new GoogleGenAI({ apiKey });
+
+    const readableStream = new ReadableStream({
+      async start(controller) {
+          try {
+              const { type } = body;
+
+              if (type === 'assessment') {
+                  const details = body.details as Omit<Assessment, 'id' | 'report' | 'createdAt'>;
+                  if (!details || !details.projectName || !details.projectProponent || !details.location || !details.projectType || !details.description) {
+                      throw new Error('Missing required assessment details.');
+                  }
+                  const prompt = getPromptForAssessmentType(details);
+                  const responseStream = await ai.models.generateContentStream({
+                      model: 'gemini-2.5-flash',
+                      contents: prompt,
+                      config: { temperature: 0.5, topP: 0.95 }
+                  });
+
+                   for await (const chunk of responseStream) {
+                      const text = chunk.text;
+                      if (text) {
+                          controller.enqueue(new TextEncoder().encode(text));
+                      }
+                  }
+
+              } else if (type === 'chat') {
+                  const messages = body.messages as { role: 'user' | 'model', text: string }[];
+                  if (!messages || !Array.isArray(messages) || messages.length === 0) {
+                       throw new Error('Missing or empty messages array for chat.');
+                  }
+                  
+                  const contents: Content[] = messages.map(msg => ({
+                      role: msg.role,
+                      parts: [{ text: msg.text }]
+                  }));
+
+                  const responseStream = await ai.models.generateContentStream({
+                      model: 'gemini-2.5-flash',
+                      contents: contents,
+                      config: {
+                          systemInstruction: "You are a helpful assistant for community members in Kenya discussing environmental and social impacts of local projects. Your name is 'Mazingira Rafiki' (Environment Friend). Be polite, informative, and sensitive to local contexts. Encourage constructive dialogue.",
+                      }
+                  });
+
+                  for await (const chunk of responseStream) {
+                      const text = chunk.text;
+                      if (text) {
+                          controller.enqueue(new TextEncoder().encode(text));
+                      }
+                  }
+
+              } else {
+                   throw new Error('Invalid request type.');
+              }
+              // Close the stream only on success
+              controller.close();
+          } catch (error) {
+              console.error('Error during stream generation:', error);
+              // Propagate the error to the client via the stream, which will cause the fetch promise to reject.
+              controller.error(error);
+          }
+      }
+    });
+
+    return {
+      statusCode: 200,
+      headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          "X-Content-Type-Options": "nosniff"
+      },
+      body: readableStream as any,
+    };
+  } catch (error) {
+      console.error('Critical error in Gemini proxy handler:', error);
+      const message = error instanceof Error ? error.message : 'An internal server error occurred.';
+      return {
+          statusCode: 500,
+          body: JSON.stringify({ error: message }),
+          headers: { "Content-Type": "application/json" }
+      };
+  }
 };
 
 export { handler };
