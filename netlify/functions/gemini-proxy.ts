@@ -117,7 +117,10 @@ const handler: Handler = async (event: HandlerEvent) => {
     const { type } = body;
 
     if (type === 'assessment') {
-      const { details } = body;
+      const details = body.details as Omit<Assessment, 'id' | 'report' | 'createdAt'>;
+       if (!details || !details.projectName || !details.projectProponent || !details.location || !details.projectType || !details.description) {
+        return { statusCode: 400, body: JSON.stringify({ error: 'Missing required assessment details.' }) };
+      }
       const prompt = getPromptForAssessmentType(details);
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
@@ -129,30 +132,29 @@ const handler: Handler = async (event: HandlerEvent) => {
         body: JSON.stringify({ report: response.text }),
       };
     } else if (type === 'chat') {
-        const { messages } = body;
+        const messages = body.messages as { role: 'user' | 'model', text: string }[];
         
-        const contents: Content[] = messages.map((msg: { role: 'user' | 'model', text: string }) => ({
+        if (!messages || !Array.isArray(messages) || messages.length === 0) {
+            return { statusCode: 400, body: JSON.stringify({ error: 'Missing or empty messages array for chat.' }) };
+        }
+        
+        const contents: Content[] = messages.map(msg => ({
             role: msg.role,
             parts: [{ text: msg.text }]
         }));
-        
-        const history = contents.slice(0, -1);
-        const userMessage = contents[contents.length-1].parts[0].text;
 
-        const chat = ai.chats.create({
+        const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
+            contents: contents,
             config: {
                 systemInstruction: "You are a helpful assistant for community members in Kenya discussing environmental and social impacts of local projects. Your name is 'Mazingira Rafiki' (Environment Friend). Be polite, informative, and sensitive to local contexts. Encourage constructive dialogue.",
-            },
-            history: history,
+            }
         });
-
-        const result = await chat.sendMessage({ message: userMessage });
         
         return {
             statusCode: 200,
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text: result.text }),
+            body: JSON.stringify({ text: response.text }),
         };
 
     } else {
