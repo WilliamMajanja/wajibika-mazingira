@@ -1,0 +1,24 @@
+# Netlify configuration for the Vite build process and serverless functions
+
+[build]
+  # Command to build the Vite project
+  command = "npm run build"
+  
+  # Directory where the built assets are located
+  publish = "dist"
+  
+  # Directory where the serverless functions are located
+  functions = "netlify/functions"
+
+# Redirect rule for the serverless function to create a clean API endpoint
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+# Rewrite rule essential for single-page applications (SPAs)
+# This ensures that any direct navigation to a route is handled by index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
