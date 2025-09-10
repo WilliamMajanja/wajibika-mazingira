@@ -19,17 +19,22 @@ export const CommunityChat: React.FC = () => {
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages]);
+    }, [messages[messages.length - 1]?.text]);
 
 
     const handleSendMessage = async () => {
         if (!currentMessage.trim() || isLoading) return;
 
         const userMessage: Message = { role: 'user', text: currentMessage };
-        const newMessages = [...messages, userMessage];
-        setMessages(newMessages);
+        const newMessagesForApi = [...messages, userMessage];
+        
+        // Optimistically update UI
+        setMessages(newMessagesForApi);
         setCurrentMessage('');
         setIsLoading(true);
+
+        // Add placeholder for model response
+        setMessages(prev => [...prev, { role: 'model', text: '' }]);
         
         try {
             const response = await fetch('/api/gemini-proxy', {
@@ -37,25 +42,51 @@ export const CommunityChat: React.FC = () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     type: 'chat',
-                    messages: newMessages // Send the whole history for context
+                    messages: newMessagesForApi
                 })
             });
 
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ error: `Chat API error: ${response.statusText}` }));
-                throw new Error(errorData.error || `Chat API error: ${response.statusText}`);
+            if (!response.ok || !response.body) {
+                const errorText = await response.text();
+                try {
+                    const errorData = JSON.parse(errorText);
+                    throw new Error(errorData.error || `Chat API error: ${response.statusText}`);
+                } catch {
+                    throw new Error(errorText || `Chat API error: ${response.statusText}`);
+                }
             }
             
-            const data = await response.json();
-            const modelMessage: Message = { role: 'model', text: data.text };
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
             
-            setMessages(prev => [...prev, modelMessage]);
+            let done = false;
+            while (!done) {
+                const { value, done: readerDone } = await reader.read();
+                done = readerDone;
+                const chunk = decoder.decode(value, { stream: true });
+                setMessages(prev => {
+                    const updatedMessages = [...prev];
+                    const lastMessage = updatedMessages[updatedMessages.length - 1];
+                    if (lastMessage && lastMessage.role === 'model') {
+                        lastMessage.text += chunk;
+                    }
+                    return updatedMessages;
+                });
+            }
 
         } catch (error) {
             console.error("Chat error:", error);
             const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
             addToast({ type: 'error', message: `Chat error: ${errorMessage}` });
-            setMessages(prev => [...prev, {role: 'model', text: `Sorry, I encountered an error. Please try again. ${errorMessage}`}]);
+             // Update the placeholder with an error message
+            setMessages(prev => {
+                const updatedMessages = [...prev];
+                const lastMessage = updatedMessages[updatedMessages.length - 1];
+                if (lastMessage && lastMessage.role === 'model' && lastMessage.text === '') {
+                    lastMessage.text = `Sorry, I encountered an error. Please try again. ${errorMessage}`;
+                }
+                return updatedMessages;
+            });
         } finally {
             setIsLoading(false);
         }
@@ -77,7 +108,7 @@ export const CommunityChat: React.FC = () => {
                         </div>
                     </div>
                 ))}
-                 {isLoading && messages[messages.length-1]?.role === 'user' && (
+                 {isLoading && messages[messages.length-1]?.role === 'model' && messages[messages.length - 1]?.text === '' && (
                     <div className="flex justify-start">
                         <div className="max-w-lg p-3 rounded-2xl bg-white text-slate-800 rounded-bl-none shadow-sm">
                             <div className="flex items-center space-x-2">

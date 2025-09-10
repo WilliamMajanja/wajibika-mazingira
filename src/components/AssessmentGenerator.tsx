@@ -41,15 +41,17 @@ export const AssessmentGenerator: React.FC = () => {
     }
 
     setIsLoading(true);
-    setGeneratedReport(null);
+    setGeneratedReport(''); // Initialize with empty string for streaming
     try {
-      const report = await generateImpactAssessment(formData);
-      setGeneratedReport(report);
+      await generateImpactAssessment(formData, (chunk) => {
+        setGeneratedReport(prev => (prev || '') + chunk);
+      });
       addToast({ type: 'success', message: 'Assessment report generated successfully.' });
     } catch (error) {
       console.error(error);
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
       addToast({ type: 'error', message: `Failed to generate report: ${errorMessage}` });
+      setGeneratedReport(null); // Clear report on error
     } finally {
       setIsLoading(false);
     }
@@ -156,7 +158,7 @@ export const AssessmentGenerator: React.FC = () => {
                 )}
             </div>
             <div className="p-6 prose prose-slate max-w-none h-[calc(100vh-16rem)] overflow-y-auto">
-                {isLoading && (
+                {isLoading && !generatedReport && (
                     <div className="flex flex-col items-center justify-center h-full text-slate-500 text-center">
                        <svg className="animate-spin h-10 w-10 text-brand-green-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -166,8 +168,8 @@ export const AssessmentGenerator: React.FC = () => {
                         <p className="text-sm">This may take a moment. The AI is analyzing the project details.</p>
                     </div>
                 )}
-                {generatedReport && !isLoading && <ReactMarkdown>{generatedReport}</ReactMarkdown>}
-                {!generatedReport && !isLoading && (
+                {(generatedReport || (isLoading && generatedReport !== null)) && <ReactMarkdown>{generatedReport}</ReactMarkdown>}
+                {!generatedReport && !isLoading && generatedReport === null && (
                     <div className="flex flex-col items-center justify-center h-full text-slate-500 text-center">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mb-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V7a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
