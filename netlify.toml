@@ -1,0 +1,10 @@
+# netlify.toml
+
+[build]
+  command = "echo 'No build command required'"
+  publish = "."
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
