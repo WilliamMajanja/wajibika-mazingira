@@ -97,7 +97,7 @@ const getPromptForAssessmentType = (
             break;
     }
 
-    return `${specializedPrompt}\n${commonProjectDetails}\nThe tone should be formal, scientific, and objective. Format the output using Markdown for clear headings and lists.`;
+    return `${specializedPrompt}\n${commonProjectDetails}\nThe tone should be formal, scientific, and objective. Format the output using Markdown for clear headings and lists. It is critical that you generate the entire report, covering all requested sections, before you conclude your response. At the very end of the report, add the marker "--- END OF REPORT ---".`;
 };
 
 

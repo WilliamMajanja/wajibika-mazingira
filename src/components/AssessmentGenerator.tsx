@@ -21,6 +21,7 @@ export const AssessmentGenerator: React.FC = () => {
   });
   const [generatedReport, setGeneratedReport] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isReportIncomplete, setIsReportIncomplete] = useState(false);
   const [assessments, setAssessments] = useLocalStorage<Assessment[]>('assessments', []);
   const { addToast } = useToasts();
 
@@ -41,7 +42,9 @@ export const AssessmentGenerator: React.FC = () => {
     }
 
     setIsLoading(true);
-    setGeneratedReport(''); // Initialize with empty string for streaming
+    setGeneratedReport('');
+    setIsReportIncomplete(false);
+
     try {
       await generateImpactAssessment(formData, (chunk) => {
         setGeneratedReport(prev => (prev || '') + chunk);
@@ -51,9 +54,19 @@ export const AssessmentGenerator: React.FC = () => {
       console.error(error);
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
       addToast({ type: 'error', message: `Failed to generate report: ${errorMessage}` });
-      setGeneratedReport(null); // Clear report on error
+      setGeneratedReport(null);
     } finally {
       setIsLoading(false);
+      setGeneratedReport(prev => {
+        const isComplete = prev?.includes('--- END OF REPORT ---') ?? false;
+
+        if (prev && !isComplete) {
+            setIsReportIncomplete(true);
+            addToast({ type: 'error', message: 'The AI may have been interrupted. Please review the report.' });
+        }
+        
+        return prev?.replace('--- END OF REPORT ---', '').trim() || null;
+      });
     }
   };
   
@@ -157,6 +170,19 @@ export const AssessmentGenerator: React.FC = () => {
                     </button>
                 )}
             </div>
+             {isReportIncomplete && !isLoading && (
+                <div className="p-3 bg-yellow-100 border-b border-yellow-200 text-sm text-yellow-800 flex items-start space-x-3" role="alert">
+                    <div>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.21 3.03-1.742 3.03H4.42c-1.532 0-2.492-1.696-1.742-3.03l5.58-9.92zM10 13a1 1 0 110-2 1 1 0 010 2zm-1-4a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clipRule="evenodd" />
+                        </svg>
+                    </div>
+                    <div>
+                        <strong className="font-semibold">Potential Incomplete Report</strong>
+                        <p className="mt-1">The AI may have been interrupted. Please review the content carefully. If sections are missing, try generating the report again.</p>
+                    </div>
+                </div>
+            )}
             <div className="p-6 prose prose-slate max-w-none h-[calc(100vh-16rem)] overflow-y-auto">
                 {isLoading && !generatedReport && (
                     <div className="flex flex-col items-center justify-center h-full text-slate-500 text-center">
@@ -171,7 +197,7 @@ export const AssessmentGenerator: React.FC = () => {
                 {(generatedReport || (isLoading && generatedReport !== null)) && <ReactMarkdown>{generatedReport}</ReactMarkdown>}
                 {!generatedReport && !isLoading && generatedReport === null && (
                     <div className="flex flex-col items-center justify-center h-full text-slate-500 text-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mb-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+                        <svg xmlns="http://www.w.org/2000/svg" className="h-12 w-12 mb-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V7a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                         <p className="font-semibold">The generated report will appear here.</p>
