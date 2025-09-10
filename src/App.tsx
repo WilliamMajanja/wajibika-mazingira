@@ -25,9 +25,9 @@ function App() {
 
   return (
     <ToastsProvider>
-        <div className="bg-slate-100 min-h-screen font-sans text-slate-800">
+        <div className="bg-slate-100 min-h-screen font-sans text-slate-800 flex flex-col h-screen">
           <Header activePage={activePage} setActivePage={setActivePage} />
-          <main className="container mx-auto p-4 sm:p-6 lg:p-8">
+          <main className="container mx-auto p-4 sm:p-6 lg:p-8 flex-grow overflow-y-auto">
               {renderPage()}
           </main>
           <ToastContainer />

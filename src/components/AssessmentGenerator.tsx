@@ -92,7 +92,7 @@ export const AssessmentGenerator: React.FC = () => {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 items-start">
       {/* Form Section */}
       <div className="md:col-span-1 lg:col-span-2">
-        <Card className="sticky top-28">
+        <Card className="md:sticky top-28">
           <form onSubmit={handleGenerate}>
             <div className="p-4 border-b border-slate-200">
                 <h2 className="text-xl font-bold text-slate-800">Project Details</h2>
@@ -183,7 +183,7 @@ export const AssessmentGenerator: React.FC = () => {
                     </div>
                 </div>
             )}
-            <div className="p-6 prose prose-slate max-w-none h-[calc(100vh-16rem)] overflow-y-auto">
+            <div className="p-6 prose prose-slate max-w-none min-h-[50vh] md:h-[calc(100vh-16rem)] overflow-y-auto">
                 {isLoading && !generatedReport && (
                     <div className="flex flex-col items-center justify-center h-full text-slate-500 text-center">
                        <svg className="animate-spin h-10 w-10 text-brand-green-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -197,7 +197,7 @@ export const AssessmentGenerator: React.FC = () => {
                 {(generatedReport || (isLoading && generatedReport !== null)) && <ReactMarkdown>{generatedReport}</ReactMarkdown>}
                 {!generatedReport && !isLoading && generatedReport === null && (
                     <div className="flex flex-col items-center justify-center h-full text-slate-500 text-center">
-                        <svg xmlns="http://www.w.org/2000/svg" className="h-12 w-12 mb-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mb-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V7a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                         <p className="font-semibold">The generated report will appear here.</p>

@@ -34,7 +34,7 @@ export const EvidenceLocker: React.FC = () => {
           <div className="p-4 border-b border-slate-200">
             <h2 className="text-lg font-bold text-slate-800">Saved Assessments</h2>
           </div>
-          <div className="max-h-[calc(100vh-14rem)] overflow-y-auto">
+          <div className="max-h-[40vh] md:max-h-[calc(100vh-14rem)] overflow-y-auto">
             {assessments.length === 0 ? (
                 <p className="p-4 text-sm text-slate-500">No assessments saved yet. Generate one from the 'Impact Assessment' tab.</p>
             ) : (
@@ -54,13 +54,13 @@ export const EvidenceLocker: React.FC = () => {
         </Card>
       </div>
       <div className="md:col-span-2 lg:col-span-3">
-        <Card className="sticky top-28">
-            <div className="p-4 border-b border-slate-200 flex justify-between items-center min-h-[65px]">
-                <h2 className="text-xl font-bold text-slate-800 truncate pr-4">
+        <Card className="md:sticky top-28">
+            <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 min-h-[65px]">
+                <h2 className="text-xl font-bold text-slate-800 truncate pr-4 w-full sm:w-auto">
                     {selectedAssessment ? selectedAssessment.projectName : 'Select an Assessment'}
                 </h2>
                 {selectedAssessment && (
-                    <div className="flex items-center space-x-4 flex-shrink-0">
+                    <div className="flex items-center space-x-4 flex-shrink-0 self-end sm:self-auto">
                          <button onClick={() => handleExport(selectedAssessment)} className="text-sm font-medium text-brand-green-600 hover:text-brand-green-800">
                             Export as PDF
                         </button>
@@ -70,7 +70,7 @@ export const EvidenceLocker: React.FC = () => {
                     </div>
                 )}
             </div>
-            <div className="p-6 prose prose-slate max-w-none h-[calc(100vh-16rem)] overflow-y-auto">
+            <div className="p-6 prose prose-slate max-w-none min-h-[50vh] md:h-[calc(100vh-16rem)] overflow-y-auto">
                 {selectedAssessment ? (
                     <ReactMarkdown>{selectedAssessment.report}</ReactMarkdown>
                 ) : (

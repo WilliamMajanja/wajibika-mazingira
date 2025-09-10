@@ -93,7 +93,7 @@ export const CommunityChat: React.FC = () => {
     };
 
     return (
-        <Card className="h-[calc(100vh-8rem)] flex flex-col">
+        <Card className="h-full flex flex-col">
             <div className="p-4 border-b border-slate-200">
                 <h2 className="text-xl font-bold text-slate-800">AI Community Assistant</h2>
                 <p className="text-sm text-slate-500">Chat with Mazingira Rafiki about local projects.</p>
