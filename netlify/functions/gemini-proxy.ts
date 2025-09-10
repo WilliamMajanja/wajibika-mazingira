@@ -183,7 +183,8 @@ const handler: Handler = async (event: HandlerEvent) => {
       statusCode: 200,
       headers: {
           "Content-Type": "text/plain; charset=utf-8",
-          "X-Content-Type-Options": "nosniff"
+          "X-Content-Type-Options": "nosniff",
+          "Transfer-Encoding": "chunked",
       },
       body: readableStream as any,
     };
