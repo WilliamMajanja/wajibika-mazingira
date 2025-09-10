@@ -1,77 +1,5 @@
 import { Assessment } from '../types';
-
-const formatText = (text: string): string => {
-    return text
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
-        .replace(/_(.*?)_/g, '<em>$1</em>'); // Italic
-};
-
-const markdownToHtml = (markdownContent: string): string => {
-    const lines = markdownContent.split('\n');
-    let html = '';
-    let listType: 'ul' | 'ol' | null = null;
-
-    for (const line of lines) {
-        let isList = false;
-        
-        const trimmedLine = line.trim();
-
-        if (trimmedLine.startsWith('### ')) {
-            if (listType) html += `</${listType}>`;
-            listType = null;
-            html += `<h3>${trimmedLine.substring(4)}</h3>`;
-        } else if (trimmedLine.startsWith('## ')) {
-            if (listType) html += `</${listType}>`;
-            listType = null;
-            html += `<h2>${trimmedLine.substring(3)}</h2>`;
-        } else if (trimmedLine.startsWith('# ')) {
-            if (listType) html += `</${listType}>`;
-            listType = null;
-            html += `<h1>${trimmedLine.substring(2)}</h1>`;
-        } else if (trimmedLine.match(/^\d+\. /)) {
-            if (listType !== 'ol') {
-                if (listType) html += `</${listType}>`;
-                html += '<ol>';
-                listType = 'ol';
-            }
-            const content = trimmedLine.substring(trimmedLine.indexOf('.') + 1).trim();
-            html += `<li>${formatText(content)}</li>`;
-            isList = true;
-        } else if (trimmedLine.startsWith('* ') || trimmedLine.startsWith('- ')) {
-            if (listType !== 'ul') {
-                if (listType) html += `</${listType}>`;
-                html += '<ul>';
-                listType = 'ul';
-            }
-            const content = trimmedLine.substring(2);
-            html += `<li>${formatText(content)}</li>`;
-            isList = true;
-        } else if (trimmedLine !== '') {
-            if (listType && line.startsWith('  ')) { // Handle nested list item content
-                 const content = line.trim();
-                 html = html.slice(0, -5) + ` ${formatText(content)}</li>`; // Appends to the last li
-            } else {
-                if (listType) html += `</${listType}>`;
-                listType = null;
-                html += `<p>${formatText(line)}</p>`;
-            }
-        }
-
-        if (!isList && listType && trimmedLine === '') {
-             if (listType) {
-                html += `</${listType}>`;
-                listType = null;
-            }
-        }
-    }
-
-    if (listType) {
-        html += `</${listType}>`;
-    }
-    
-    return html.replace(/<p><\/p>/g, ''); // remove empty paragraphs
-};
-
+import { marked } from 'marked';
 
 export const exportToPdf = (assessment: Assessment) => {
     const fileName = `${assessment.assessmentType}_Assessment_${assessment.projectName.replace(/\s+/g, '_')}.pdf`;
@@ -81,7 +9,7 @@ export const exportToPdf = (assessment: Assessment) => {
         return;
     }
 
-    const reportHtml = markdownToHtml(assessment.report);
+    const reportHtml = marked.parse(assessment.report, { gfm: true, breaks: true });
 
     const assessorHtml = assessment.assessorName
       ? `<p><strong>Prepared By:</strong> ${assessment.assessorName}<em>, ${assessment.assessorType || 'Assessor'}</em></p>`
