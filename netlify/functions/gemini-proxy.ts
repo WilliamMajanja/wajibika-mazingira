@@ -1,5 +1,5 @@
 import { GoogleGenAI, Content } from "@google/genai";
-import type { Handler, HandlerEvent } from "@netlify/functions";
+import type { Context } from "@netlify/functions";
 import type { Assessment } from "../../src/types";
 
 const getPromptForAssessmentType = (
@@ -101,19 +101,25 @@ const getPromptForAssessmentType = (
 };
 
 
-const handler: Handler = async (event: HandlerEvent) => {
+export default async (req: Request, context: Context) => {
   try {
-    if (event.httpMethod !== 'POST') {
-      return { statusCode: 405, body: JSON.stringify({ error: 'Method Not Allowed' }) };
+    if (req.method !== 'POST') {
+      return new Response(JSON.stringify({ error: 'Method Not Allowed' }), {
+        status: 405,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
     const apiKey = process.env.API_KEY;
     if (!apiKey) {
       console.error('API_KEY is not configured on the server.');
-      return { statusCode: 500, body: JSON.stringify({ error: 'API_KEY is not configured on the server.' }) };
+      return new Response(JSON.stringify({ error: 'API_KEY is not configured on the server.' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
-    const body = JSON.parse(event.body || '{}');
+    const body = await req.json();
     const ai = new GoogleGenAI({ apiKey });
 
     const readableStream = new ReadableStream({
@@ -169,34 +175,27 @@ const handler: Handler = async (event: HandlerEvent) => {
               } else {
                    throw new Error('Invalid request type.');
               }
-              // Close the stream only on success
               controller.close();
           } catch (error) {
               console.error('Error during stream generation:', error);
-              // Propagate the error to the client via the stream, which will cause the fetch promise to reject.
               controller.error(error);
           }
       }
     });
 
-    return {
-      statusCode: 200,
-      headers: {
-          "Content-Type": "text/plain; charset=utf-8",
-          "X-Content-Type-Options": "nosniff",
-          "Transfer-Encoding": "chunked",
-      },
-      body: readableStream as any,
-    };
+    return new Response(readableStream, {
+        status: 200,
+        headers: {
+            "Content-Type": "text/plain; charset=utf-8",
+            "X-Content-Type-Options": "nosniff",
+        },
+    });
   } catch (error) {
       console.error('Critical error in Gemini proxy handler:', error);
       const message = error instanceof Error ? error.message : 'An internal server error occurred.';
-      return {
-          statusCode: 500,
-          body: JSON.stringify({ error: message }),
+      return new Response(JSON.stringify({ error: message }), {
+          status: 500,
           headers: { "Content-Type": "application/json" }
-      };
+      });
   }
 };
-
-export { handler };

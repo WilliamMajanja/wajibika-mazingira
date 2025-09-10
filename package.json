@@ -15,7 +15,7 @@
     "react-markdown": "^10.1.0"
   },
   "devDependencies": {
-    "@netlify/functions": "^2.6.0",
+    "@netlify/functions": "^4.2.5",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.0",
