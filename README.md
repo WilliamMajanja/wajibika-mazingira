@@ -107,7 +107,7 @@ This application is optimized for a seamless deployment to Netlify.
     -   **Key**: `API_KEY`
     -   **Value**: `Your-Gemini-API-Key-Here`
 
-The project includes a `netlify.toml` file that correctly configures the site for a single-page application.
+The project includes a `netlify.toml` file that correctly aconfigures the site for a single-page application.
 
 ```toml
 # netlify.toml
