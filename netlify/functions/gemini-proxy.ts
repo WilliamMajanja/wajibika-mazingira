@@ -28,10 +28,7 @@ const getFullReportPrompt = (
     const outlineString = fullOutline.map(title => `- ${title}`).join('\n');
 
     return `
-    Act as a senior Environmental Scientist registered with NEMA (National Environment Management Authority) in Kenya.
-    You are writing a professional, comprehensive, and complete impact assessment report.
-
-    Your task is to write the full report based on the project details below and adhering strictly to the provided report structure. For each section in the outline, provide detailed and thorough content. Format each section title as a Markdown heading (e.g., "## Introduction").
+    Write the full report based on the project details below and adhering strictly to the provided report structure. For each section in the outline, provide detailed and thorough content. Format each section title as a Markdown heading (e.g., "## Introduction").
 
     ### Project Details:
     - **Project Name:** ${projectName}
@@ -78,10 +75,12 @@ export default async (req: Request, context: Context) => {
                     if (type === 'assessment') {
                         // 1. Generate the report outline
                         const outlinePrompt = getOutlinePrompt(details);
+                        const outlineContents: Content[] = [{ role: 'user', parts: [{ text: outlinePrompt }] }];
+                        
                         const outlineResponse = await ai.models.generateContent({
                             model: 'gemini-2.5-flash',
-                            contents: outlinePrompt,
-                             config: {
+                            contents: outlineContents,
+                            config: {
                                 systemInstruction: "You are an expert report structurer. You generate lists of section titles for professional reports based on a type and context.",
                             }
                         });
@@ -95,18 +94,18 @@ export default async (req: Request, context: Context) => {
 
                         // 2. Generate the full report based on the outline in a single stream
                         const fullReportPrompt = getFullReportPrompt(details, sectionTitles);
+                        const reportContents: Content[] = [{ role: 'user', parts: [{ text: fullReportPrompt }] }];
+                        
                         const reportStream = await ai.models.generateContentStream({
                             model: 'gemini-2.5-flash',
-                            contents: fullReportPrompt,
+                            contents: reportContents,
+                             config: {
+                                systemInstruction: "Act as a senior Environmental Scientist registered with NEMA (National Environment Management Authority) in Kenya. You are writing a professional, comprehensive, and complete impact assessment report.",
+                            }
                         });
 
                         // 3. Stream the entire report
-                        for await (const chunk of reportStream) {
-                            const chunkText = chunk.text;
-                            if (chunkText) {
-                                controller.enqueue(new TextEncoder().encode(chunkText));
-                            }
-                        }
+                        await streamResponse(reportStream, controller);
                         
                         // 4. Add the end-of-report marker to signal completion
                         controller.enqueue(new TextEncoder().encode("\n\n--- END OF REPORT ---"));
