@@ -20,22 +20,18 @@ const getOutlinePrompt = (
     `;
 };
 
-const getSectionPrompt = (
-    sectionTitle: string, 
+const getFullReportPrompt = (
     projectDetails: Omit<Assessment, 'id' | 'report' | 'createdAt'>,
     fullOutline: string[]
 ): string => {
     const { projectName, projectProponent, location, projectType, description, assessmentType } = projectDetails;
+    const outlineString = fullOutline.map(title => `- ${title}`).join('\n');
 
     return `
     Act as a senior Environmental Scientist registered with NEMA (National Environment Management Authority) in Kenya.
-    You are writing a professional impact assessment report. The overall structure of the report is: ${fullOutline.join(', ')}.
+    You are writing a professional, comprehensive, and complete impact assessment report.
 
-    Your current task is to write ONLY the content for the following section:
-
-    ### Section: "${sectionTitle}"
-
-    Base your writing on the project details provided below. Be thorough, professional, and use a formal tone suitable for an official report. Do not repeat the section title in your response.
+    Your task is to write the full report based on the project details below and adhering strictly to the provided report structure. For each section in the outline, provide detailed and thorough content. Format each section title as a Markdown heading (e.g., "## Introduction").
 
     ### Project Details:
     - **Project Name:** ${projectName}
@@ -45,7 +41,10 @@ const getSectionPrompt = (
     - **Assessment Type:** ${assessmentType}
     - **Detailed Description:** ${description}
 
-    Generate the content for the "${sectionTitle}" section now.
+    ### Report Structure to Follow:
+    ${outlineString}
+
+    Generate the complete report now. Do not repeat the project details in the report body. Begin directly with the first section.
     `;
 };
 
@@ -94,29 +93,22 @@ export default async (req: Request, context: Context) => {
                             throw new Error("Failed to generate a valid report outline from the AI.");
                         }
 
-                        // 2. Generate each section and stream it
-                        for (const title of sectionTitles) {
-                            // Stream the section title as a Markdown heading
-                            const titleMarkdown = `\n## ${title}\n\n`;
-                            controller.enqueue(new TextEncoder().encode(titleMarkdown));
+                        // 2. Generate the full report based on the outline in a single stream
+                        const fullReportPrompt = getFullReportPrompt(details, sectionTitles);
+                        const reportStream = await ai.models.generateContentStream({
+                            model: 'gemini-2.5-flash',
+                            contents: fullReportPrompt,
+                        });
 
-                            // Create a prompt for the specific section content
-                            const sectionPrompt = getSectionPrompt(title, details, sectionTitles);
-                            const sectionStream = await ai.models.generateContentStream({
-                                model: 'gemini-2.5-flash',
-                                contents: sectionPrompt
-                            });
-
-                            // Stream the generated content for the section
-                            for await (const chunk of sectionStream) {
-                                const chunkText = chunk.text;
-                                if (chunkText) {
-                                    controller.enqueue(new TextEncoder().encode(chunkText));
-                                }
+                        // 3. Stream the entire report
+                        for await (const chunk of reportStream) {
+                            const chunkText = chunk.text;
+                            if (chunkText) {
+                                controller.enqueue(new TextEncoder().encode(chunkText));
                             }
                         }
-
-                        // 3. Add the end-of-report marker to signal completion
+                        
+                        // 4. Add the end-of-report marker to signal completion
                         controller.enqueue(new TextEncoder().encode("\n\n--- END OF REPORT ---"));
 
                     } else if (type === 'chat') {
