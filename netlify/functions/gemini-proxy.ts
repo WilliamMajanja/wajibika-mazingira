@@ -1,4 +1,4 @@
-import { GoogleGenAI, Content } from "@google/genai";
+import { GoogleGenAI, Content, Chat } from "@google/genai";
 import type { Context } from "@netlify/functions";
 import type { Assessment } from "../../src/types";
 
@@ -29,184 +29,165 @@ const getPromptForAssessmentType = (
             3.  **Social Baseline Conditions:** Describe the local communities, demographics, livelihoods, cultural heritage, and social infrastructure.
             4.  **Stakeholder Analysis:** Identify key stakeholders and their interests.
             5.  **Potential Positive Social Impacts:** Outline benefits like job creation, skill development, and community empowerment.
-            6.  **Potential Negative Social Impacts:** Detail adverse effects like displacement, cultural heritage loss, social conflicts, and strain on services.
-            7.  **Mitigation & Enhancement Measures:** Propose specific actions to minimize negative impacts and maximize positive ones.
-            8.  **Social Management & Monitoring Plan:** Suggest a framework for managing social issues.
-            9.  **Conclusion:** Summarize the project's social feasibility.
+            6.  **Potential Negative Social Impacts:** Detail adverse effects like displacement, cultural heritage loss, or strain on social services.
+            7.  **Mitigation Measures:** Propose specific, actionable strategies to minimize negative impacts.
+            8.  **Conclusion and Recommendations:** Summarize the findings and provide clear recommendations for the project proponent.
             `;
             break;
         case 'Health':
-             specializedPrompt = `
-            Act as a public health expert with knowledge of environmental health in Kenya.
+            specializedPrompt = `
+            Act as a public health official and epidemiologist.
             Generate a preliminary Health Impact Assessment (HIA) report.
-            The report must include these sections:
-            1.  **Executive Summary:** Overview of key health-related findings.
-            2.  **Project Introduction:** Description of project activities relevant to public health.
-            3.  **Community Health Baseline:** Current health status of the affected population, including prevalent diseases and access to healthcare.
-            4.  **Potential Health Risks:** Analyze risks from air/water/soil pollution, noise, occupational hazards, and potential for disease vector changes.
-            5.  **Potential Health Benefits:** Identify positive outcomes like improved access to healthcare, better sanitation, or economic-driven health improvements.
-            6.  **Mitigation Measures:** Propose specific measures to prevent or reduce health risks.
-            7.  **Health Management & Monitoring Plan:** Outline a plan to monitor health indicators.
-            8.  **Conclusion:** Summarize the project's overall impact on public health.
+            Structure the report with these sections:
+            1.  **Executive Summary:** Key health-related findings and recommendations.
+            2.  **Project Introduction:** Overview of the project from a public health perspective.
+            3.  **Health Baseline Conditions:** Detail the current health status of the local population, including prevalent diseases, healthcare access, and environmental health factors (air/water quality).
+            4.  **Potential Health Impacts (Positive and Negative):** Analyze impacts on disease transmission, occupational health and safety, access to healthcare, and mental well-being.
+            5.  **Vulnerable Groups Analysis:** Identify groups disproportionately affected (e.g., children, elderly).
+            6.  **Mitigation and Enhancement Measures:** Propose strategies to protect community health and enhance positive outcomes.
+            7.  **Monitoring Plan:** Suggest a framework for monitoring health indicators.
+            8.  **Conclusion and Recommendations:** Final summary and actionable public health recommendations.
             `;
             break;
         case 'Climate':
             specializedPrompt = `
-            Act as a climate change risk analyst specializing in East Africa.
-            Generate a preliminary Climate Impact Assessment (CIA) report.
-            The report should cover:
-            1.  **Executive Summary:** Key climate-related findings.
-            2.  **Project Introduction:** How the project relates to climate change.
-            3.  **Project's Carbon Footprint:** Estimate the greenhouse gas emissions during construction and operation.
-            4.  **Climate Vulnerability Assessment:** How will climate change (e.g., increased flooding, drought) impact the project's viability?
-            5.  **Impact on Local Climate Resilience:** How does the project affect the community's ability to adapt to climate change?
-            6.  **Alignment with Climate Policy:** Assess conformity with Kenya's National Climate Change Action Plan.
-            7.  **Mitigation & Adaptation Measures:** Propose measures to reduce emissions (mitigation) and cope with climate impacts (adaptation).
-            8.  **Conclusion:** Overall summary of the project's climate resilience and impact.
+            Act as a climate scientist and environmental planner.
+            Generate a preliminary Climate Impact Assessment report.
+            The report must include:
+            1.  **Executive Summary:** Summary of climate-related risks and opportunities.
+            2.  **Project Introduction:** Project description in the context of climate change.
+            3.  **Climate Change Projections for the Region:** Use general knowledge of East African climate trends to describe anticipated changes in temperature, precipitation, and extreme weather events.
+            4.  **Greenhouse Gas (GHG) Emissions Assessment:** Estimate the project's potential GHG emissions during construction and operation.
+            5.  **Climate Vulnerability Assessment:** Analyze the project's vulnerability to climate change impacts (e.g., flooding, drought).
+            6.  **Impact on Local Climate Resilience:** Assess how the project affects the community's ability to adapt to climate change.
+            7.  **Mitigation and Adaptation Strategies:** Propose measures to reduce emissions and enhance resilience.
+            8.  **Conclusion and Recommendations:** Summary of findings and climate-focused recommendations.
             `;
             break;
         case 'Cumulative':
             specializedPrompt = `
-            Act as a senior environmental planner specializing in cumulative effects analysis in Kenya.
-            Generate a preliminary Cumulative Impact Assessment (CuIA) report.
-            The report must assess the project's impact in combination with other past, present, and foreseeable future projects in the area. Structure it as follows:
-            1.  **Executive Summary:** Summary of cumulative effects.
-            2.  **Introduction & Scope:** Define the assessment's scope and boundaries.
-            3.  **Identification of Valued Components (VCs):** Identify key environmental and social components that could be affected (e.g., a specific watershed, wildlife corridor).
-            4.  **Analysis of Cumulative Effects:** Analyze the combined effects on each VC from this project and others.
-            5.  **Contribution of the Project:** Detail this specific project's contribution to the overall cumulative effects.
-            6.  **Mitigation & Regional Planning:** Propose mitigation measures and recommendations for regional management.
-            7.  **Conclusion:** Summarize the significance of the cumulative impacts.
+            Act as a senior environmental policy advisor with expertise in systems thinking.
+            Generate a Cumulative Impact Assessment (CIA) report. This is the most complex assessment.
+            The report must integrate findings across environmental, social, health, and climate domains to identify synergistic and cumulative effects.
+            Structure the report as follows:
+            1.  **Executive Summary:** A holistic overview of the combined, long-term impacts.
+            2.  **Project Introduction:** Description of the project and its context within the existing landscape of other developments (even if hypothetical).
+            3.  **Scoping and Spatial/Temporal Boundaries:** Define the geographical area and timeframe for the cumulative effects analysis.
+            4.  **Analysis of Cumulative Effects:**
+                *   **Environmental Stressors:** How do project impacts combine with existing environmental issues (e.g., deforestation, water pollution)?
+                *   **Social Fabric:** How does the project interact with other social changes to affect community cohesion, inequality, and livelihoods?
+                *   **Public Health System:** What is the combined strain on local health infrastructure from this and other activities?
+                *   **Climate Resilience:** How does the project's climate footprint and vulnerability amplify or mitigate regional climate risks?
+            5.  **Synergistic Impacts:** Identify "impact chains" where one type of impact triggers another (e.g., deforestation leading to soil erosion, affecting water quality and community health).
+            6.  **Integrated Mitigation and Management Plan:** Propose a coordinated plan to manage these complex, interconnected impacts.
+            7.  **Conclusion and Recommendations:** Provide strategic, high-level recommendations for sustainable development in the region.
             `;
             break;
         case 'Environmental':
         default:
             specializedPrompt = `
-            Act as an expert environmental impact assessment consultant specializing in Kenyan regulations and ecosystems.
-            Generate a preliminary Environmental Impact Assessment (EIA) report.
-            The report should be comprehensive and structured with the following sections:
-            1.  **Executive Summary:** A brief overview of the project and key findings.
-            2.  **Project Introduction:** Detailed description of the proposed project.
-            3.  **Baseline Environmental Conditions:** Describe the current state of the environment (flora, fauna, water, soil, communities).
-            4.  **Potential Positive Impacts:** Outline potential benefits (e.g., job creation, economic growth).
-            5.  **Potential Negative Impacts:** Detail adverse effects (e.g., deforestation, pollution, soil erosion, wildlife displacement).
-            6.  **Mitigation Measures:** Propose specific actions to minimize negative impacts, referencing Kenyan NEMA guidelines.
-            7.  **Environmental Management Plan (EMP):** Suggest a framework for monitoring and management.
-            8.  **Conclusion:** Summarize the project's overall environmental feasibility.
+            Act as a senior Environmental Scientist registered with NEMA (National Environment Management Authority) in Kenya.
+            Generate a professional, preliminary Environmental Impact Assessment (EIA) Scoping Report.
+            The report must be comprehensive and well-structured, following Kenyan standards. Include the following sections:
+            1.  **Executive Summary:** A concise summary of the key findings and recommendations.
+            2.  **Project Introduction:** A detailed description of the project, its objectives, and scope.
+            3.  **Environmental Baseline Conditions:** Describe the current state of the physical environment (air, water, soil, biodiversity) and the socio-economic landscape.
+            4.  **Legislative and Regulatory Framework:** Mention relevant Kenyan environmental laws (e.g., EMCA, 1999) and NEMA regulations.
+            5.  **Anticipated Environmental Impacts:** Identify and analyze potential positive and negative impacts on air quality, water resources, biodiversity, land use, and local communities.
+            6.  **Proposed Mitigation Measures:** Suggest practical and specific measures to prevent, reduce, or offset negative impacts.
+            7.  **Environmental and Social Management Plan (ESMP) Outline:** Propose a framework for monitoring and managing environmental impacts throughout the project lifecycle.
+            8.  **Analysis of Project Alternatives:** Briefly discuss alternatives to the proposed project, including the "no-project" option.
+            9.  **Conclusion and Recommendations:** A clear summary of the assessment's conclusions and recommendations for the next steps.
             `;
             break;
     }
-
-    return `${specializedPrompt}\n${commonProjectDetails}\nThe tone should be formal, scientific, and objective. Format the output using Markdown for clear headings and lists. It is critical that you generate the entire report, covering all requested sections, before you conclude your response. At the very end of the report, add the marker "--- END OF REPORT ---".`;
+    // Final instruction for the model
+    return `${commonProjectDetails}\n\n${specializedPrompt}\n\nGenerate the report in well-formatted Markdown. At the very end of the entire response, include the text "--- END OF REPORT ---".`;
 };
 
+const streamResponse = async (stream: AsyncGenerator<any>, responseStream: ReadableStreamDefaultController) => {
+    for await (const chunk of stream) {
+        const chunkText = chunk.text;
+        if (chunkText) {
+            responseStream.enqueue(new TextEncoder().encode(chunkText));
+        }
+    }
+};
 
 export default async (req: Request, context: Context) => {
-  try {
+    const { API_KEY } = process.env;
+    if (!API_KEY) {
+        return new Response(JSON.stringify({ error: "API key not configured" }), { status: 500 });
+    }
+
     if (req.method !== 'POST') {
-      return new Response(JSON.stringify({ error: 'Method Not Allowed' }), {
-        status: 405,
-        headers: { 'Content-Type': 'application/json' }
-      });
+        return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
     }
 
-    const apiKey = process.env.API_KEY;
-    if (!apiKey) {
-      console.error('API_KEY is not configured on the server.');
-      return new Response(JSON.stringify({ error: 'API_KEY is not configured on the server.' }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
+    try {
+        const { type, details, messages } = await req.json();
+        const ai = new GoogleGenAI({ apiKey: API_KEY });
+
+        const readableStream = new ReadableStream({
+            async start(controller) {
+                try {
+                    if (type === 'assessment') {
+                        const prompt = getPromptForAssessmentType(details);
+                        const chat: Chat = ai.chats.create({ model: 'gemini-2.5-flash' });
+                        const resultStream = await chat.sendMessageStream({ message: prompt });
+                        await streamResponse(resultStream, controller);
+
+                    } else if (type === 'chat') {
+                        // Ensure history starts with a user message
+                        const validHistory = messages.slice();
+                        if (validHistory.length > 0 && validHistory[0].role !== 'user') {
+                            validHistory.shift(); 
+                        }
+                        
+                        // Map to the format expected by the GenAI SDK
+                        const history: Content[] = validHistory.map((msg: {role: 'user' | 'model', text: string}) => ({
+                            role: msg.role,
+                            parts: [{ text: msg.text }]
+                        }));
+
+                        // The last message is the new prompt
+                        const userMessage = history.pop();
+                        if (!userMessage) {
+                             throw new Error("No user message found to send.");
+                        }
+
+                        const chat: Chat = ai.chats.create({
+                            model: 'gemini-2.5-flash',
+                            config: {
+                                systemInstruction: "You are 'Mazingira Rafiki', a helpful, anonymous AI assistant for a Kenyan community forum. Your goal is to facilitate constructive discussions about environmental and social impacts of local projects. Be neutral, informative, and encouraging. Do not provide legal advice. Keep responses concise and clear. All conversations are in English."
+                            },
+                            history: history,
+                        });
+                        
+                        const resultStream = await chat.sendMessageStream({ message: userMessage.parts[0].text });
+                        await streamResponse(resultStream, controller);
+
+                    } else {
+                        controller.enqueue(new TextEncoder().encode(JSON.stringify({ error: "Invalid request type" })));
+                    }
+                } catch (e) {
+                    const error = e as Error;
+                    console.error("Gemini API Error:", error);
+                    // Do not expose detailed internal errors to the client
+                    controller.enqueue(new TextEncoder().encode(JSON.stringify({ error: "An error occurred while communicating with the AI." })));
+                } finally {
+                    controller.close();
+                }
+            }
+        });
+
+        return new Response(readableStream, {
+            headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+        });
+
+    } catch (e) {
+        const error = e as Error;
+        console.error("Proxy function error:", error);
+        return new Response(JSON.stringify({ error: "Invalid request body or internal server error." }), { status: 400 });
     }
-
-    const body = await req.json();
-    const ai = new GoogleGenAI({ apiKey });
-
-    const readableStream = new ReadableStream({
-      async start(controller) {
-          try {
-              const { type } = body;
-
-              if (type === 'assessment') {
-                  const details = body.details as Omit<Assessment, 'id' | 'report' | 'createdAt'>;
-                  if (!details || !details.projectName || !details.projectProponent || !details.location || !details.projectType || !details.description) {
-                      throw new Error('Missing required assessment details.');
-                  }
-                  const prompt = getPromptForAssessmentType(details);
-                  const responseStream = await ai.models.generateContentStream({
-                      model: 'gemini-2.5-flash',
-                      contents: prompt,
-                      config: { temperature: 0.5, topP: 0.95 }
-                  });
-
-                   for await (const chunk of responseStream) {
-                      const text = chunk.text;
-                      if (text) {
-                          controller.enqueue(new TextEncoder().encode(text));
-                      }
-                  }
-
-              } else if (type === 'chat') {
-                  const messages = body.messages as { role: 'user' | 'model', text: string }[];
-                   if (!messages || !Array.isArray(messages) || messages.length === 0) {
-                       throw new Error('Missing or empty messages array for chat.');
-                  }
-                  
-                  // The last message is the new prompt
-                  const lastUserMessage = messages[messages.length - 1];
-                  if (lastUserMessage.role !== 'user') {
-                      throw new Error('The last message in a chat history must be from the user.');
-                  }
-                  const currentMessage = lastUserMessage.text;
-
-                  // The rest of the messages form the history
-                  const history = messages.slice(0, messages.length - 1);
-                  const contents: Content[] = history.map(msg => ({
-                      role: msg.role,
-                      parts: [{ text: msg.text }]
-                  }));
-                  
-                  const chat = ai.chats.create({
-                      model: 'gemini-2.5-flash',
-                      history: contents,
-                      config: {
-                          systemInstruction: "You are a helpful assistant for community members in Kenya discussing environmental and social impacts of local projects. Your name is 'Mazingira Rafiki' (Environment Friend). Be polite, informative, and sensitive to local contexts. Encourage constructive dialogue.",
-                      }
-                  });
-
-                  const responseStream = await chat.sendMessageStream({ message: currentMessage });
-
-                  for await (const chunk of responseStream) {
-                      const text = chunk.text;
-                      if (text) {
-                          controller.enqueue(new TextEncoder().encode(text));
-                      }
-                  }
-
-              } else {
-                   throw new Error('Invalid request type.');
-              }
-              controller.close();
-          } catch (error) {
-              console.error('Error during stream generation:', error);
-              controller.error(error);
-          }
-      }
-    });
-
-    return new Response(readableStream, {
-        status: 200,
-        headers: {
-            "Content-Type": "text/plain; charset=utf-8",
-            "X-Content-Type-Options": "nosniff",
-        },
-    });
-  } catch (error) {
-      console.error('Critical error in Gemini proxy handler:', error);
-      const message = error instanceof Error ? error.message : 'An internal server error occurred.';
-      return new Response(JSON.stringify({ error: message }), {
-          status: 500,
-          headers: { "Content-Type": "application/json" }
-      });
-  }
 };
