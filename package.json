@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@google/genai": "^1.18.0",
+    "html2pdf.js": "^0.10.1",
     "marked": "^12.0.2",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",

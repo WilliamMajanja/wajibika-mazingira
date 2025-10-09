@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Assessment, AssessmentType } from '../types';
 import { generateImpactAssessment } from '../services/geminiService';
 import { useLocalStorage } from '../hooks/useLocalStorage';
@@ -7,6 +7,12 @@ import { Card } from './common/Card';
 import ReactMarkdown from 'react-markdown';
 
 const assessmentTypes: AssessmentType[] = ['Environmental', 'Social', 'Health', 'Climate', 'Cumulative'];
+
+const EditIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+    </svg>
+);
 
 export const AssessmentGenerator: React.FC = () => {
   const [formData, setFormData] = useState<Omit<Assessment, 'id' | 'report' | 'createdAt'>>({
@@ -20,10 +26,13 @@ export const AssessmentGenerator: React.FC = () => {
     assessorType: '',
   });
   const [generatedReport, setGeneratedReport] = useState<string | null>(null);
+  const [editedReport, setEditedReport] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isReportIncomplete, setIsReportIncomplete] = useState(false);
   const [assessments, setAssessments] = useLocalStorage<Assessment[]>('assessments', []);
   const { addToast } = useToasts();
+  const reportContainerRef = useRef<HTMLDivElement | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -43,11 +52,20 @@ export const AssessmentGenerator: React.FC = () => {
 
     setIsLoading(true);
     setGeneratedReport('');
+    setEditedReport('');
+    setIsEditing(false);
     setIsReportIncomplete(false);
+    
+    // Auto-scroll to the report section on smaller screens
+    if (window.innerWidth < 768) { // 768px is the 'md' breakpoint in Tailwind
+        reportContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 
+    let fullReport = '';
     try {
       await generateImpactAssessment(formData, (chunk) => {
-        setGeneratedReport(prev => (prev || '') + chunk);
+        fullReport += chunk;
+        setGeneratedReport(prev => (prev ?? '') + chunk);
       });
       addToast({ type: 'success', message: 'Assessment report generated successfully.' });
     } catch (error) {
@@ -57,17 +75,28 @@ export const AssessmentGenerator: React.FC = () => {
       setGeneratedReport(null);
     } finally {
       setIsLoading(false);
-      setGeneratedReport(prev => {
-        const isComplete = prev?.includes('--- END OF REPORT ---') ?? false;
+      
+      const isComplete = fullReport.includes('--- END OF REPORT ---');
+      const finalReport = fullReport.replace('--- END OF REPORT ---', '').trim();
+      
+      // Perform the final, clean state update
+      setGeneratedReport(finalReport || null);
+      setEditedReport(finalReport);
 
-        if (prev && !isComplete) {
-            setIsReportIncomplete(true);
-            addToast({ type: 'error', message: 'The AI may have been interrupted. Please review the report.' });
-        }
-        
-        return prev?.replace('--- END OF REPORT ---', '').trim() || null;
-      });
+      // Show a warning if the report might be incomplete
+      if (fullReport && !isComplete) {
+          setIsReportIncomplete(true);
+          addToast({ type: 'error', message: 'The AI may have been interrupted. Please review the report.' });
+      }
     }
+  };
+  
+  const handleToggleEdit = () => {
+    if (isEditing) {
+      setGeneratedReport(editedReport);
+      addToast({ type: 'info', message: 'Changes applied to the report.' });
+    }
+    setIsEditing(!isEditing);
   };
   
   const handleSave = () => {
@@ -85,6 +114,16 @@ export const AssessmentGenerator: React.FC = () => {
     
     setAssessments([newAssessment, ...assessments]);
     addToast({ type: 'success', message: 'Assessment saved to Evidence Locker.' });
+    
+    // Reset form and state for a new assessment
+     setFormData({
+        projectName: '', projectProponent: '', location: '', projectType: '', description: '',
+        assessmentType: 'Environmental', assessorName: '', assessorType: '',
+    });
+    setGeneratedReport(null);
+    setEditedReport('');
+    setIsEditing(false);
+    setIsReportIncomplete(false);
   };
 
 
@@ -160,14 +199,20 @@ export const AssessmentGenerator: React.FC = () => {
       </div>
       
       {/* Report Section */}
-      <div className="md:col-span-1 lg:col-span-3">
+      <div className="md:col-span-1 lg:col-span-3" ref={reportContainerRef}>
         <Card>
             <div className="p-4 border-b border-slate-200 flex justify-between items-center min-h-[65px]">
                 <h2 className="text-xl font-bold text-slate-800">Generated Report</h2>
                 {generatedReport && !isLoading && (
-                    <button onClick={handleSave} className="text-sm font-medium text-brand-green-600 hover:text-brand-green-800">
-                        Save to Locker
-                    </button>
+                    <div className="flex items-center space-x-4">
+                        <button onClick={handleToggleEdit} className="flex items-center gap-1.5 text-sm font-medium text-brand-green-600 hover:text-brand-green-800">
+                            <EditIcon className="h-4 w-4" />
+                            {isEditing ? 'Save Changes' : 'Edit'}
+                        </button>
+                        <button onClick={handleSave} className="text-sm font-medium text-brand-green-600 hover:text-brand-green-800">
+                            Save to Locker
+                        </button>
+                    </div>
                 )}
             </div>
              {isReportIncomplete && !isLoading && (
@@ -183,9 +228,9 @@ export const AssessmentGenerator: React.FC = () => {
                     </div>
                 </div>
             )}
-            <div className="p-6 prose prose-slate max-w-none min-h-[50vh] md:h-[calc(100vh-16rem)] overflow-y-auto">
+            <div className="min-h-[50vh] md:h-[calc(100vh-16rem)] overflow-y-auto">
                 {isLoading && !generatedReport && (
-                    <div className="flex flex-col items-center justify-center h-full text-slate-500 text-center">
+                    <div className="p-6 flex flex-col items-center justify-center h-full text-slate-500 text-center">
                        <svg className="animate-spin h-10 w-10 text-brand-green-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -194,9 +239,22 @@ export const AssessmentGenerator: React.FC = () => {
                         <p className="text-sm">This may take a moment. The AI is analyzing the project details.</p>
                     </div>
                 )}
-                {(generatedReport || (isLoading && generatedReport !== null)) && <ReactMarkdown>{generatedReport}</ReactMarkdown>}
+                {(generatedReport || (isLoading && generatedReport !== null)) && (
+                    isEditing ? (
+                         <textarea
+                            value={editedReport}
+                            onChange={(e) => setEditedReport(e.target.value)}
+                            className="w-full h-full p-6 bg-slate-50 border-0 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-brand-green-500 font-mono text-sm leading-relaxed"
+                            aria-label="Report Editor"
+                        />
+                    ) : (
+                        <div className="p-6 prose prose-slate max-w-none">
+                            <ReactMarkdown>{generatedReport}</ReactMarkdown>
+                        </div>
+                    )
+                )}
                 {!generatedReport && !isLoading && generatedReport === null && (
-                    <div className="flex flex-col items-center justify-center h-full text-slate-500 text-center">
+                    <div className="p-6 flex flex-col items-center justify-center h-full text-slate-500 text-center">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mb-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V7a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>

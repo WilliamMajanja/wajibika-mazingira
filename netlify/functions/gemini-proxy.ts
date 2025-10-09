@@ -148,22 +148,33 @@ export default async (req: Request, context: Context) => {
 
               } else if (type === 'chat') {
                   const messages = body.messages as { role: 'user' | 'model', text: string }[];
-                  if (!messages || !Array.isArray(messages) || messages.length === 0) {
+                   if (!messages || !Array.isArray(messages) || messages.length === 0) {
                        throw new Error('Missing or empty messages array for chat.');
                   }
                   
-                  const contents: Content[] = messages.map(msg => ({
+                  // The last message is the new prompt
+                  const lastUserMessage = messages[messages.length - 1];
+                  if (lastUserMessage.role !== 'user') {
+                      throw new Error('The last message in a chat history must be from the user.');
+                  }
+                  const currentMessage = lastUserMessage.text;
+
+                  // The rest of the messages form the history
+                  const history = messages.slice(0, messages.length - 1);
+                  const contents: Content[] = history.map(msg => ({
                       role: msg.role,
                       parts: [{ text: msg.text }]
                   }));
-
-                  const responseStream = await ai.models.generateContentStream({
+                  
+                  const chat = ai.chats.create({
                       model: 'gemini-2.5-flash',
-                      contents: contents,
+                      history: contents,
                       config: {
                           systemInstruction: "You are a helpful assistant for community members in Kenya discussing environmental and social impacts of local projects. Your name is 'Mazingira Rafiki' (Environment Friend). Be polite, informative, and sensitive to local contexts. Encourage constructive dialogue.",
                       }
                   });
+
+                  const responseStream = await chat.sendMessageStream({ message: currentMessage });
 
                   for await (const chunk of responseStream) {
                       const text = chunk.text;
