@@ -7,8 +7,6 @@ const getAssessmentPrompt = (
 ): string => {
     const { projectName, projectProponent, location, projectType, description, assessmentType } = details;
 
-    const systemInstruction = "You are an expert Environmental Scientist, fully accredited by NEMA in Kenya. Your task is to generate a professional, detailed, and comprehensive impact assessment report based on the user's provided details.";
-
     const standardSections = `
 - **1.0 Introduction**: Briefly introduce the project and the purpose of this assessment.
 - **2.0 Project Description**: Provide a detailed description of the project based on the user's input.
@@ -44,8 +42,6 @@ Within the 'Impact Assessment' section, you must:
     }
 
     return `
-${systemInstruction}
-
 **TASK**: Generate a report based on the following details.
 
 **PROJECT DETAILS**:
@@ -104,6 +100,9 @@ export default async (req: Request, context: Context) => {
                         const resultStream = await ai.models.generateContentStream({
                             model: 'gemini-2.5-flash',
                             contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                            config: {
+                                systemInstruction: "You are an expert Environmental Scientist, fully accredited by NEMA in Kenya. Your task is to generate a professional, detailed, and comprehensive impact assessment report based on the user's provided details.",
+                            }
                         });
                         await streamResponse(resultStream, controller);
 

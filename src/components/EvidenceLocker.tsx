@@ -1,3 +1,4 @@
+/// <reference types="react" />
 import * as React from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { Assessment } from '../types';

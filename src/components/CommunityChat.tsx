@@ -1,3 +1,4 @@
+/// <reference types="react" />
 import * as React from 'react';
 import { Card } from './common/Card';
 import ReactMarkdown from 'react-markdown';
@@ -26,7 +27,9 @@ export const CommunityChat: React.FC = () => {
         if (!currentMessage.trim() || isLoading) return;
 
         const userMessage: Message = { role: 'user', text: currentMessage };
-        const historyForApi = [...messages.slice(1), userMessage]; // Create history for the API call
+        
+        // Construct the full history for the API, excluding the initial greeting
+        const historyForApi = [...messages.slice(1), userMessage];
 
         // Optimistically update UI with user message and model placeholder
         setMessages(prev => [...prev, userMessage, { role: 'model', text: '' }]);

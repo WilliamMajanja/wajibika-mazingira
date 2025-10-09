@@ -1,3 +1,4 @@
+/// <reference types="react" />
 import * as React from 'react';
 import { Header } from './components/Header';
 import { AssessmentGenerator } from './components/AssessmentGenerator';

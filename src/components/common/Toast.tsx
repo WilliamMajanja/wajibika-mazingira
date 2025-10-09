@@ -1,3 +1,4 @@
+/// <reference types="react" />
 import * as React from 'react';
 import { useToasts } from '../../hooks/useToasts';
 import { Toast as ToastType } from '../../types';

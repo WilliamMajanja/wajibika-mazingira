@@ -1,3 +1,4 @@
+/// <reference types="react" />
 import * as React from 'react';
 import { Assessment, AssessmentType } from '../types';
 import { generateImpactAssessment } from '../services/geminiService';
@@ -76,7 +77,7 @@ export const AssessmentGenerator: React.FC = () => {
       setGeneratedReport(finalReport);
       setEditedReport(finalReport);
       
-      if (finalReport) {
+      if (finalReport.trim()) {
         addToast({ type: 'success', message: 'Assessment report generated successfully.' });
         if (!isComplete) {
             setIsReportIncomplete(true);
