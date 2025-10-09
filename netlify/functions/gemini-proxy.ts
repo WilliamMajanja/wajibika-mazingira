@@ -42,6 +42,8 @@ const getFullReportPrompt = (
     }
 
     return `
+    As a senior Environmental Scientist registered with NEMA (National Environment Management Authority) in Kenya, you are writing a professional, comprehensive, and complete impact assessment report.
+
     Write the full report based on the project details below and adhering strictly to the provided report structure. For each section in the outline, provide detailed and thorough content. Format each section title as a Markdown heading (e.g., "## Introduction").
     ${specificInstruction}
     ### Project Details:
@@ -111,9 +113,6 @@ export default async (req: Request, context: Context) => {
                         const reportStream = await ai.models.generateContentStream({
                             model: 'gemini-2.5-flash',
                             contents: fullReportPrompt,
-                             config: {
-                                systemInstruction: "Act as a senior Environmental Scientist registered with NEMA (National Environment Management Authority) in Kenya. You are writing a professional, comprehensive, and complete impact assessment report.",
-                            }
                         });
 
                         await streamResponse(reportStream, controller);
