@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import * as React from 'react';
 import { Header } from './components/Header';
 import { AssessmentGenerator } from './components/AssessmentGenerator';
 import { CommunityChat } from './components/CommunityChat';
@@ -8,7 +8,7 @@ import { ToastsProvider } from './hooks/useToasts';
 import { ToastContainer } from './components/common/Toast';
 
 function App() {
-  const [activePage, setActivePage] = useState<Page>('assessment');
+  const [activePage, setActivePage] = React.useState<Page>('assessment');
 
   const renderPage = () => {
     switch (activePage) {

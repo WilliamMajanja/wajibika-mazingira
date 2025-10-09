@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import * as React from 'react';
 import { Assessment, AssessmentType } from '../types';
 import { generateImpactAssessment } from '../services/geminiService';
 import { useLocalStorage } from '../hooks/useLocalStorage';
@@ -15,7 +15,7 @@ const EditIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 export const AssessmentGenerator: React.FC = () => {
-  const [formData, setFormData] = useState<Omit<Assessment, 'id' | 'report' | 'createdAt'>>({
+  const [formData, setFormData] = React.useState<Omit<Assessment, 'id' | 'report' | 'createdAt'>>({
     projectName: '',
     projectProponent: '',
     location: '',
@@ -25,14 +25,14 @@ export const AssessmentGenerator: React.FC = () => {
     assessorName: '',
     assessorType: '',
   });
-  const [generatedReport, setGeneratedReport] = useState<string | null>(null);
-  const [editedReport, setEditedReport] = useState('');
-  const [isEditing, setIsEditing] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isReportIncomplete, setIsReportIncomplete] = useState(false);
+  const [generatedReport, setGeneratedReport] = React.useState<string | null>(null);
+  const [editedReport, setEditedReport] = React.useState('');
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [isReportIncomplete, setIsReportIncomplete] = React.useState(false);
   const [assessments, setAssessments] = useLocalStorage<Assessment[]>('assessments', []);
   const { addToast } = useToasts();
-  const reportContainerRef = useRef<HTMLDivElement | null>(null);
+  const reportContainerRef = React.useRef<HTMLDivElement | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -56,44 +56,45 @@ export const AssessmentGenerator: React.FC = () => {
     setIsEditing(false);
     setIsReportIncomplete(false);
     
+    // On smaller screens, scroll to the report section so the user can see progress
     if (window.innerWidth < 768) {
         reportContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     let fullReport = '';
-    let hasSucceeded = false;
     try {
       await generateImpactAssessment(formData, (chunk) => {
         fullReport += chunk;
         setGeneratedReport(prev => (prev ?? '') + chunk);
       });
-      hasSucceeded = true;
+
+      // After stream is finished, process the full report
+      const completionMarker = '*** END OF REPORT ***';
+      const isComplete = fullReport.includes(completionMarker);
+      const finalReport = fullReport.replace(completionMarker, '').trim();
+
+      setGeneratedReport(finalReport);
+      setEditedReport(finalReport);
+      
+      if (finalReport) {
+        addToast({ type: 'success', message: 'Assessment report generated successfully.' });
+        if (!isComplete) {
+            setIsReportIncomplete(true);
+            addToast({ type: 'info', message: 'The AI may have been interrupted. Please review the report.' });
+        }
+      } else {
+        // This case handles a successful stream that returned an empty response
+        setGeneratedReport(null);
+        addToast({ type: 'error', message: 'The AI returned an empty response. Please try again or rephrase your project details.' });
+      }
+
     } catch (error) {
       console.error(error);
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
       addToast({ type: 'error', message: `Failed to generate report: ${errorMessage}` });
-      setGeneratedReport(null); // Clear report on error
+      setGeneratedReport(null); // Clear report on any error
     } finally {
       setIsLoading(false);
-      
-      const completionMarker = '*** END OF REPORT ***';
-      const isComplete = fullReport.includes(completionMarker);
-      const finalReport = fullReport.replace(completionMarker, '').trim();
-      
-      setGeneratedReport(finalReport || null);
-      setEditedReport(finalReport);
-
-      if (hasSucceeded && finalReport) {
-          addToast({ type: 'success', message: 'Assessment report generated successfully.' });
-          if (!isComplete) {
-              setIsReportIncomplete(true);
-              addToast({ type: 'error', message: 'The AI may have been interrupted. Please review the report.' });
-          }
-      } else if (hasSucceeded && !finalReport) {
-          addToast({ type: 'error', message: 'The AI returned an empty response. Please try again.' });
-          setGeneratedReport(null);
-      }
-      // If hasSucceeded is false, the catch block already showed an error toast.
     }
   };
   
@@ -114,13 +115,14 @@ export const AssessmentGenerator: React.FC = () => {
     const newAssessment: Assessment = {
         id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
         ...formData,
-        report: generatedReport,
+        report: isEditing ? editedReport : generatedReport,
         createdAt: new Date().toISOString(),
     };
     
     setAssessments([newAssessment, ...assessments]);
     addToast({ type: 'success', message: 'Assessment saved to Evidence Locker.' });
     
+    // Reset form and state
     setFormData({
         projectName: '', projectProponent: '', location: '', projectType: '', description: '',
         assessmentType: 'Environmental', assessorName: '', assessorType: '',

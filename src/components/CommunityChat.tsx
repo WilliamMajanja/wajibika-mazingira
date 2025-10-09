@@ -1,5 +1,4 @@
-
-import React, { useState, useRef, useEffect } from 'react';
+import * as React from 'react';
 import { Card } from './common/Card';
 import ReactMarkdown from 'react-markdown';
 import { useToasts } from '../hooks/useToasts';
@@ -10,15 +9,15 @@ interface Message {
 }
 
 export const CommunityChat: React.FC = () => {
-    const [messages, setMessages] = useState<Message[]>([
+    const [messages, setMessages] = React.useState<Message[]>([
         { role: 'model', text: "Jambo! I am Mazingira Rafiki. How can I help you discuss the environmental and social topics in your community today?" }
     ]);
-    const [currentMessage, setCurrentMessage] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
+    const [currentMessage, setCurrentMessage] = React.useState('');
+    const [isLoading, setIsLoading] = React.useState(false);
     const { addToast } = useToasts();
-    const messagesEndRef = useRef<HTMLDivElement | null>(null);
+    const messagesEndRef = React.useRef<HTMLDivElement | null>(null);
 
-    useEffect(() => {
+    React.useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages, isLoading]);
 
@@ -27,17 +26,12 @@ export const CommunityChat: React.FC = () => {
         if (!currentMessage.trim() || isLoading) return;
 
         const userMessage: Message = { role: 'user', text: currentMessage };
-        
-        // The history sent to the API should not include the initial hardcoded greeting.
-        const historyForApi = [...messages.slice(1), userMessage];
+        const historyForApi = [...messages.slice(1), userMessage]; // Create history for the API call
 
-        // Optimistically update UI
-        setMessages(prev => [...prev, userMessage]);
+        // Optimistically update UI with user message and model placeholder
+        setMessages(prev => [...prev, userMessage, { role: 'model', text: '' }]);
         setCurrentMessage('');
         setIsLoading(true);
-
-        // Add placeholder for model response
-        setMessages(prev => [...prev, { role: 'model', text: '' }]);
         
         try {
             const response = await fetch('/api/gemini-proxy', {
@@ -70,12 +64,12 @@ export const CommunityChat: React.FC = () => {
                 done = readerDone;
                 const chunk = decoder.decode(value, { stream: true });
                 setMessages(prev => {
-                    const updatedMessages = [...prev];
-                    const lastMessage = updatedMessages[updatedMessages.length - 1];
+                    const latestMessages = [...prev];
+                    const lastMessage = latestMessages[latestMessages.length - 1];
                     if (lastMessage && lastMessage.role === 'model') {
                         lastMessage.text += chunk;
                     }
-                    return updatedMessages;
+                    return latestMessages;
                 });
             }
 
@@ -83,17 +77,12 @@ export const CommunityChat: React.FC = () => {
             console.error("Chat error:", error);
             const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
             addToast({ type: 'error', message: `Chat error: ${errorMessage}` });
-             // Update the placeholder with an error message
+            
+            // Revert optimistic updates and show an error message in the chat
             setMessages(prev => {
-                const updatedMessages = [...prev];
-                const lastMessage = updatedMessages[updatedMessages.length - 1];
-                if (lastMessage && lastMessage.role === 'model' && lastMessage.text === '') {
-                    lastMessage.text = `Sorry, I encountered an error. Please try again.`;
-                } else {
-                    // if an error happened mid-stream, remove the failed message
-                    return updatedMessages.slice(0, -1);
-                }
-                return updatedMessages;
+                // Remove the user's message and the model's placeholder
+                const revertedMessages = prev.slice(0, -2);
+                return [...revertedMessages, { role: 'model', text: 'Sorry, I encountered an error. Please try again.' }];
             });
         } finally {
             setIsLoading(false);

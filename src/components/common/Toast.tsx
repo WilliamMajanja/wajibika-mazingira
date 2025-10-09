@@ -1,9 +1,9 @@
-import React, { useEffect } from 'react';
+import * as React from 'react';
 import { useToasts } from '../../hooks/useToasts';
 import { Toast as ToastType } from '../../types';
 
 const Toast: React.FC<{ toast: ToastType; onDismiss: (id: string) => void }> = ({ toast, onDismiss }) => {
-  useEffect(() => {
+  React.useEffect(() => {
     const timer = setTimeout(() => {
       onDismiss(toast.id);
     }, 5000);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import * as React from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { Assessment } from '../types';
 import { Card } from './common/Card';
@@ -14,12 +14,12 @@ const EditIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 export const EvidenceLocker: React.FC = () => {
   const [assessments, setAssessments] = useLocalStorage<Assessment[]>('assessments', []);
-  const [selectedAssessment, setSelectedAssessment] = useState<Assessment | null>(assessments[0] || null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedReport, setEditedReport] = useState('');
+  const [selectedAssessment, setSelectedAssessment] = React.useState<Assessment | null>(assessments[0] || null);
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [editedReport, setEditedReport] = React.useState('');
   const { addToast } = useToasts();
   
-  useEffect(() => {
+  React.useEffect(() => {
     setIsEditing(false);
     setEditedReport('');
   }, [selectedAssessment?.id]);
