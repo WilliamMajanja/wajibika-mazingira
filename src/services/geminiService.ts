@@ -1,3 +1,4 @@
+
 import type { Assessment } from '../types';
 
 export const generateImpactAssessment = async (
@@ -17,14 +18,16 @@ export const generateImpactAssessment = async (
     });
 
     if (!response.ok) {
-        const errorText = await response.text();
-        // Try to parse as JSON, but fall back to text if it fails
-        try {
-            const errorData = JSON.parse(errorText);
-            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-        } catch {
-             throw new Error(errorText || `HTTP error! status: ${response.status}`);
-        }
+      let errorMessage = `HTTP error! status: ${response.status}`;
+      try {
+        // The backend should return a JSON error object
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorMessage;
+      } catch {
+        // Fallback if the error response is not JSON
+        errorMessage = await response.text() || errorMessage;
+      }
+      throw new Error(errorMessage);
     }
 
     if (!response.body) {
@@ -43,7 +46,7 @@ export const generateImpactAssessment = async (
     }
   } catch (error) {
     console.error("Error generating impact assessment:", error);
-    // Re-throw the error to be caught by the component
+    // Re-throw the error to be caught and displayed by the component
     throw error;
   }
 };

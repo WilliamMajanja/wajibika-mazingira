@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Card } from './common/Card';
 import ReactMarkdown from 'react-markdown';
@@ -19,17 +20,19 @@ export const CommunityChat: React.FC = () => {
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages[messages.length - 1]?.text]);
+    }, [messages, isLoading]);
 
 
     const handleSendMessage = async () => {
         if (!currentMessage.trim() || isLoading) return;
 
         const userMessage: Message = { role: 'user', text: currentMessage };
-        const newMessagesForApi = [...messages, userMessage];
         
+        // The history sent to the API should not include the initial hardcoded greeting.
+        const historyForApi = [...messages.slice(1), userMessage];
+
         // Optimistically update UI
-        setMessages(newMessagesForApi);
+        setMessages(prev => [...prev, userMessage]);
         setCurrentMessage('');
         setIsLoading(true);
 
@@ -42,18 +45,20 @@ export const CommunityChat: React.FC = () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     type: 'chat',
-                    messages: newMessagesForApi
+                    messages: historyForApi
                 })
             });
 
             if (!response.ok || !response.body) {
-                const errorText = await response.text();
-                try {
-                    const errorData = JSON.parse(errorText);
-                    throw new Error(errorData.error || `Chat API error: ${response.statusText}`);
+                let errorMessage = `Chat API error: ${response.statusText}`;
+                 try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.error || errorMessage;
                 } catch {
-                    throw new Error(errorText || `Chat API error: ${response.statusText}`);
+                     const textError = await response.text();
+                     errorMessage = textError || errorMessage;
                 }
+                throw new Error(errorMessage);
             }
             
             const reader = response.body.getReader();
@@ -83,7 +88,10 @@ export const CommunityChat: React.FC = () => {
                 const updatedMessages = [...prev];
                 const lastMessage = updatedMessages[updatedMessages.length - 1];
                 if (lastMessage && lastMessage.role === 'model' && lastMessage.text === '') {
-                    lastMessage.text = `Sorry, I encountered an error. Please try again. ${errorMessage}`;
+                    lastMessage.text = `Sorry, I encountered an error. Please try again.`;
+                } else {
+                    // if an error happened mid-stream, remove the failed message
+                    return updatedMessages.slice(0, -1);
                 }
                 return updatedMessages;
             });
@@ -102,8 +110,8 @@ export const CommunityChat: React.FC = () => {
                 {messages.map((msg, index) => (
                     <div key={index} className={`flex items-end gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                         <div className={`max-w-xl p-3 rounded-2xl ${msg.role === 'user' ? 'bg-brand-green-600 text-white rounded-br-none' : 'bg-white text-slate-800 rounded-bl-none shadow-sm'}`}>
-                           <div className="prose prose-sm max-w-none" style={{color: 'inherit'}}>
-                             <ReactMarkdown>{msg.text}</ReactMarkdown>
+                           <div className="prose prose-sm max-w-none prose-p:my-0 prose-p:text-inherit" style={{color: 'inherit'}}>
+                             <ReactMarkdown>{msg.text || '...'}</ReactMarkdown>
                            </div>
                         </div>
                     </div>

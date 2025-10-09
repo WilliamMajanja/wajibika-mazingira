@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { Assessment, AssessmentType } from '../types';
 import { generateImpactAssessment } from '../services/geminiService';
@@ -51,7 +52,7 @@ export const AssessmentGenerator: React.FC = () => {
     }
 
     setIsLoading(true);
-    setGeneratedReport('');
+    setGeneratedReport(''); // Show loading spinner and clear previous report
     setEditedReport('');
     setIsEditing(false);
     setIsReportIncomplete(false);
@@ -72,12 +73,13 @@ export const AssessmentGenerator: React.FC = () => {
       console.error(error);
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
       addToast({ type: 'error', message: `Failed to generate report: ${errorMessage}` });
-      setGeneratedReport(null);
+      setGeneratedReport(null); // Clear report on error
     } finally {
       setIsLoading(false);
       
-      const isComplete = fullReport.includes('--- END OF REPORT ---');
-      const finalReport = fullReport.replace('--- END OF REPORT ---', '').trim();
+      const completionMarker = '*** END OF REPORT ***';
+      const isComplete = fullReport.includes(completionMarker);
+      const finalReport = fullReport.replace(completionMarker, '').trim();
       
       // Perform the final, clean state update
       setGeneratedReport(finalReport || null);
