@@ -2,9 +2,6 @@ import { GoogleGenAI, Content } from "@google/genai";
 import type { Context } from "@netlify/functions";
 import type { Assessment } from "../../src/types";
 
-// A structured prompt is more reliable. We separate the persona/system instructions
-// from the specific, immediate task.
-
 const assessmentSystemInstruction = `You are a senior Environmental Scientist registered with NEMA (National Environment Management Authority) in Kenya. Your task is to write a professional, comprehensive impact assessment report. Your report must be well-structured with clear sections formatted in Markdown, including sections like Introduction, Project Description, Baseline Conditions, Impact Assessment, Mitigation Measures, and Conclusion. Write detailed content for each section based on your expertise and the provided project details.`;
 
 const getAssessmentContent = (
@@ -77,11 +74,13 @@ export default async (req: Request, context: Context) => {
             async start(controller) {
                 try {
                     if (type === 'assessment') {
-                        const contents = getAssessmentContent(details);
+                        const userPrompt = getAssessmentContent(details);
+                        const contents: Content[] = [{ role: 'user', parts: [{ text: userPrompt }] }];
+                        
                         const resultStream = await ai.models.generateContentStream({
                             model: 'gemini-2.5-flash',
                             contents: contents,
-                             config: {
+                            config: {
                                 systemInstruction: assessmentSystemInstruction,
                             },
                         });
