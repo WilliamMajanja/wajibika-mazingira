@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Assessment, AssessmentType } from '../types';
 import { generateImpactAssessment } from '../services/geminiService';
@@ -57,18 +56,18 @@ export const AssessmentGenerator: React.FC = () => {
     setIsEditing(false);
     setIsReportIncomplete(false);
     
-    // Auto-scroll to the report section on smaller screens
-    if (window.innerWidth < 768) { // 768px is the 'md' breakpoint in Tailwind
+    if (window.innerWidth < 768) {
         reportContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     let fullReport = '';
+    let hasSucceeded = false;
     try {
       await generateImpactAssessment(formData, (chunk) => {
         fullReport += chunk;
         setGeneratedReport(prev => (prev ?? '') + chunk);
       });
-      addToast({ type: 'success', message: 'Assessment report generated successfully.' });
+      hasSucceeded = true;
     } catch (error) {
       console.error(error);
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
@@ -81,15 +80,20 @@ export const AssessmentGenerator: React.FC = () => {
       const isComplete = fullReport.includes(completionMarker);
       const finalReport = fullReport.replace(completionMarker, '').trim();
       
-      // Perform the final, clean state update
       setGeneratedReport(finalReport || null);
       setEditedReport(finalReport);
 
-      // Show a warning if the report might be incomplete
-      if (fullReport && !isComplete) {
-          setIsReportIncomplete(true);
-          addToast({ type: 'error', message: 'The AI may have been interrupted. Please review the report.' });
+      if (hasSucceeded && finalReport) {
+          addToast({ type: 'success', message: 'Assessment report generated successfully.' });
+          if (!isComplete) {
+              setIsReportIncomplete(true);
+              addToast({ type: 'error', message: 'The AI may have been interrupted. Please review the report.' });
+          }
+      } else if (hasSucceeded && !finalReport) {
+          addToast({ type: 'error', message: 'The AI returned an empty response. Please try again.' });
+          setGeneratedReport(null);
       }
+      // If hasSucceeded is false, the catch block already showed an error toast.
     }
   };
   
@@ -117,8 +121,7 @@ export const AssessmentGenerator: React.FC = () => {
     setAssessments([newAssessment, ...assessments]);
     addToast({ type: 'success', message: 'Assessment saved to Evidence Locker.' });
     
-    // Reset form and state for a new assessment
-     setFormData({
+    setFormData({
         projectName: '', projectProponent: '', location: '', projectType: '', description: '',
         assessmentType: 'Environmental', assessorName: '', assessorType: '',
     });

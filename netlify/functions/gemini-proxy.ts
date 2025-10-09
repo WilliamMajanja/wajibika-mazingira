@@ -1,54 +1,50 @@
-
 import { GoogleGenAI, Content } from "@google/genai";
 import type { Context } from "@netlify/functions";
 import type { Assessment } from "../../src/types";
 
-// A single, robust prompt generation function for all assessment types.
-const getAssessmentPrompt = (
+// A structured prompt is more reliable. We separate the persona/system instructions
+// from the specific, immediate task.
+
+const assessmentSystemInstruction = `You are a senior Environmental Scientist registered with NEMA (National Environment Management Authority) in Kenya. Your task is to write a professional, comprehensive impact assessment report. Your report must be well-structured with clear sections formatted in Markdown, including sections like Introduction, Project Description, Baseline Conditions, Impact Assessment, Mitigation Measures, and Conclusion. Write detailed content for each section based on your expertise and the provided project details.`;
+
+const getAssessmentContent = (
     details: Omit<Assessment, 'id' | 'report' | 'createdAt'>
 ): string => {
     const { projectName, projectProponent, location, projectType, description, assessmentType } = details;
 
-    let typeSpecificInstructions = '';
+    let typeSpecificFocus = '';
     switch (assessmentType) {
         case 'Environmental':
-            typeSpecificInstructions = 'Focus on the project\'s impact on local ecosystems, biodiversity, water sources, air quality, and noise levels.';
+            typeSpecificFocus = 'Focus on the project\'s impact on local ecosystems, biodiversity, water sources, air quality, and noise levels.';
             break;
         case 'Social':
-            typeSpecificInstructions = 'Focus on the project\'s effects on the local community, including displacement, employment, cultural heritage, public services, and social equity.';
+            typeSpecificFocus = 'Focus on the project\'s effects on the local community, including displacement, employment, cultural heritage, public services, and social equity.';
             break;
         case 'Health':
-            typeSpecificInstructions = 'Focus on the potential health impacts on the community, such as those from air and water pollution, noise, and changes to access to healthcare or food sources.';
+            typeSpecificFocus = 'Focus on the potential health impacts on the community, such as those from air and water pollution, noise, and changes to access to healthcare or food sources.';
             break;
         case 'Climate':
-            typeSpecificInstructions = 'Focus on the project\'s carbon footprint, greenhouse gas emissions, and its vulnerability or resilience to climate change effects like flooding or drought.';
+            typeSpecificFocus = 'Focus on the project\'s carbon footprint, greenhouse gas emissions, and its vulnerability or resilience to climate change effects like flooding or drought.';
             break;
         case 'Cumulative':
-            typeSpecificInstructions = `This is a "Cumulative" assessment. Your analysis MUST consider the incremental impact of this project in combination with other past, present, and reasonably foreseeable projects in the area. The discussion should focus on the total, additive, and synergistic effects on environmental and social resources, not just the impacts of this single project in isolation.`;
+            typeSpecificFocus = `Your primary focus is a "Cumulative" analysis. Evaluate the project's impact in combination with other past, present, and foreseeable projects. Analyze the total additive and synergistic effects.`;
             break;
     }
 
     return `
-    As a senior Environmental Scientist registered with NEMA (National Environment Management Authority) in Kenya, write a professional, comprehensive, and complete "${assessmentType}" impact assessment report.
-
-    Your report must be well-structured with clear sections formatted in Markdown. It must be detailed, thorough, and based on the project details provided below.
-
-    **Primary Focus for this Assessment Type:**
-    ${typeSpecificInstructions}
+    Generate a complete "${assessmentType}" impact assessment report for the following project.
+    
+    **Primary Focus:** ${typeSpecificFocus}
 
     **Project Details:**
-    - **Project Name:** ${projectName}
-    - **Project Proponent:** ${projectProponent}
-    - **Location:** ${location}, Kenya
-    - **Project Type:** ${projectType}
-    - **Detailed Description:** ${description}
+    - Name: ${projectName}
+    - Proponent: ${projectProponent}
+    - Location: ${location}, Kenya
+    - Type: ${projectType}
+    - Description: ${description}
 
-    **Instructions:**
-    1.  Create a standard report structure including sections like Introduction, Project Description, Baseline Conditions, Impact Assessment, Mitigation Measures, and Conclusion.
-    2.  Write detailed content for each section based on the project details and your expertise.
-    3.  Do not repeat the project details list in the report body. Begin directly with the first section.
-    4.  Ensure the report is complete.
-    5.  Conclude the entire report with the exact phrase on a new line: "*** END OF REPORT ***"
+    Ensure the report is complete and well-structured. Do not repeat the project details list in the report body. Begin directly with the first section.
+    Conclude the entire report with the exact phrase on a new line: "*** END OF REPORT ***"
     `;
 };
 
@@ -81,10 +77,13 @@ export default async (req: Request, context: Context) => {
             async start(controller) {
                 try {
                     if (type === 'assessment') {
-                        const prompt = getAssessmentPrompt(details);
+                        const contents = getAssessmentContent(details);
                         const resultStream = await ai.models.generateContentStream({
                             model: 'gemini-2.5-flash',
-                            contents: prompt,
+                            contents: contents,
+                             config: {
+                                systemInstruction: assessmentSystemInstruction,
+                            },
                         });
                         await streamResponse(resultStream, controller);
 
@@ -110,7 +109,6 @@ export default async (req: Request, context: Context) => {
                 } catch (e) {
                     const error = e as Error;
                     console.error("Gemini API Error in Stream:", error);
-                    // This error will be caught by the service on the frontend.
                     controller.error(new Error("An error occurred while communicating with the AI."));
                 }
             }
