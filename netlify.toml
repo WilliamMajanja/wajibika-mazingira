@@ -1,0 +1,48 @@
+# Netlify build and deployment settings for your Wajibika Mazingira app.
+
+# [build] settings tell Netlify how to build your site.
+[build]
+  # This is the command to build your Vite project for production.
+  command = "npm run build"
+  
+  # This is the directory where the built, static files are located. Vite's default is 'dist'.
+  publish = "dist"
+  
+  # This tells Netlify where to find your serverless functions.
+  functions = "netlify/functions"
+
+# [functions] settings configure how your serverless functions are bundled.
+[functions]
+  # Using esbuild is the modern and fast way to bundle Node.js and TypeScript functions.
+  node_bundler = "esbuild"
+
+# [[redirects]] settings are for handling URL rewrites, proxies, and redirects.
+# This rule is crucial for making your frontend talk to your backend function.
+[[redirects]]
+  # Any request made from your app to a path starting with /api/...
+  from = "/api/*"
+  
+  # ...will be transparently proxied to the corresponding Netlify function.
+  # For example, a fetch to /api/gemini-proxy will be routed to your gemini-proxy.ts function.
+  to = "/.netlify/functions/:splat"
+  
+  # A status of 200 makes this a rewrite (proxy), not a 301 redirect.
+  # This is essential for API calls.
+  status = 200
+
+# [dev] settings configure the local development environment when you run `ntl dev`.
+[dev]
+  # The command to start your frontend development server (Vite).
+  command = "npm run dev"
+
+  # The port your frontend framework (Vite) runs on.
+  targetPort = 5173
+
+  # The port Netlify will serve the entire project from (frontend + functions).
+  port = 8888
+
+  # This tells the Netlify dev server where to find static assets.
+  publish = "dist"
+  
+  # This will automatically open your browser when you start the dev server.
+  autoLaunch = true
