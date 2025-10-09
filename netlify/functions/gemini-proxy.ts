@@ -6,9 +6,16 @@ import type { Assessment } from "../../src/types";
 const getOutlinePrompt = (
     projectDetails: Omit<Assessment, 'id' | 'report' | 'createdAt'>
 ): string => {
+    let specificInstruction = '';
+    if (projectDetails.assessmentType === 'Cumulative') {
+        specificInstruction = `
+This is a "Cumulative" impact assessment. The report must analyze the combined, incremental effects of the proposed project alongside other past, present, and reasonably foreseeable future projects in the area. The outline should include sections for identifying other relevant projects, defining spatial and temporal boundaries, and assessing the overall cumulative impact on specific environmental and social resources.
+`;
+    }
+
     return `
     Based on the following project details for a "${projectDetails.assessmentType}" impact assessment in Kenya, generate a standard list of main section titles for a comprehensive report.
-    
+    ${specificInstruction}
     ### Project Details:
     - **Project Name:** ${projectDetails.projectName}
     - **Project Proponent:** ${projectDetails.projectProponent}
@@ -27,9 +34,16 @@ const getFullReportPrompt = (
     const { projectName, projectProponent, location, projectType, description, assessmentType } = projectDetails;
     const outlineString = fullOutline.map(title => `- ${title}`).join('\n');
 
+    let specificInstruction = '';
+    if (assessmentType === 'Cumulative') {
+        specificInstruction = `
+**Important:** For this "Cumulative" assessment, ensure your analysis in each relevant section considers the incremental impact of this project in combination with other past, present, and foreseeable projects. The discussion should focus on the total, additive, and synergistic effects on environmental resources, not just the impacts of this single project in isolation.
+`;
+    }
+
     return `
     Write the full report based on the project details below and adhering strictly to the provided report structure. For each section in the outline, provide detailed and thorough content. Format each section title as a Markdown heading (e.g., "## Introduction").
-
+    ${specificInstruction}
     ### Project Details:
     - **Project Name:** ${projectName}
     - **Project Proponent:** ${projectProponent}
@@ -73,13 +87,12 @@ export default async (req: Request, context: Context) => {
             async start(controller) {
                 try {
                     if (type === 'assessment') {
-                        // 1. Generate the report outline
+                        // 1. Generate the report outline using a simple string prompt for robustness.
                         const outlinePrompt = getOutlinePrompt(details);
-                        const outlineContents: Content[] = [{ role: 'user', parts: [{ text: outlinePrompt }] }];
                         
                         const outlineResponse = await ai.models.generateContent({
                             model: 'gemini-2.5-flash',
-                            contents: outlineContents,
+                            contents: outlinePrompt,
                             config: {
                                 systemInstruction: "You are an expert report structurer. You generate lists of section titles for professional reports based on a type and context.",
                             }
@@ -92,22 +105,18 @@ export default async (req: Request, context: Context) => {
                             throw new Error("Failed to generate a valid report outline from the AI.");
                         }
 
-                        // 2. Generate the full report based on the outline in a single stream
+                        // 2. Generate the full report based on the outline.
                         const fullReportPrompt = getFullReportPrompt(details, sectionTitles);
-                        const reportContents: Content[] = [{ role: 'user', parts: [{ text: fullReportPrompt }] }];
                         
                         const reportStream = await ai.models.generateContentStream({
                             model: 'gemini-2.5-flash',
-                            contents: reportContents,
+                            contents: fullReportPrompt,
                              config: {
                                 systemInstruction: "Act as a senior Environmental Scientist registered with NEMA (National Environment Management Authority) in Kenya. You are writing a professional, comprehensive, and complete impact assessment report.",
                             }
                         });
 
-                        // 3. Stream the entire report
                         await streamResponse(reportStream, controller);
-                        
-                        // 4. Add the end-of-report marker to signal completion
                         controller.enqueue(new TextEncoder().encode("\n\n--- END OF REPORT ---"));
 
                     } else if (type === 'chat') {
@@ -137,15 +146,18 @@ export default async (req: Request, context: Context) => {
                         await streamResponse(resultStream, controller);
 
                     } else {
-                        controller.enqueue(new TextEncoder().encode(JSON.stringify({ error: "Invalid request type" })));
+                        throw new Error(`Invalid request type: ${type}`);
                     }
+                    
+                    // If we reached here without errors, close the stream successfully.
+                    controller.close();
+
                 } catch (e) {
                     const error = e as Error;
-                    console.error("Gemini API Error:", error);
-                    // Do not expose detailed internal errors to the client
-                    controller.enqueue(new TextEncoder().encode(JSON.stringify({ error: "An error occurred while communicating with the AI." })));
-                } finally {
-                    controller.close();
+                    console.error("Gemini API Error in Stream:", error);
+                    // This will cause the client's `reader.read()` promise to reject,
+                    // allowing for proper error handling on the frontend.
+                    controller.error(new Error("An error occurred while communicating with the AI."));
                 }
             }
         });
