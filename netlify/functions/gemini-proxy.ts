@@ -100,7 +100,7 @@ export default async (req: Request, context: Context) => {
                         
                         const resultStream = await ai.models.generateContentStream({
                             model: 'gemini-2.5-flash',
-                            contents: prompt,
+                            contents: [{ role: 'user', parts: [{ text: prompt }] }],
                             config: {
                                 systemInstruction: "You are an expert Environmental Scientist, fully accredited by NEMA in Kenya. Your task is to generate a professional, detailed, and comprehensive impact assessment report based on the user's provided details.",
                             }
