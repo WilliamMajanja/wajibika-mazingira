@@ -25,33 +25,32 @@ export default async (req: Request, context: Context) => {
     }
 
     try {
-        const { type, messages, systemInstruction } = await req.json();
+        const { messages, systemInstruction } = await req.json();
 
-        if (type !== 'chat' || !Array.isArray(messages) || messages.length === 0) {
-            return new Response(JSON.stringify({ error: "Invalid request: 'type' must be 'chat' and 'messages' must be a non-empty array." }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+        if (!Array.isArray(messages) || messages.length === 0) {
+            return new Response(JSON.stringify({ error: "Invalid request: 'messages' must be a non-empty array." }), { status: 400, headers: { 'Content-Type': 'application/json' } });
         }
 
         const readableStream = new ReadableStream({
             async start(controller) {
                 try {
                     const ai = new GoogleGenAI({ apiKey: API_KEY });
-
-                    const history: Content[] = messages.slice(0, -1).map((msg: {role: 'user' | 'model', text: string}) => ({
+                    
+                    // Convert message format for the generateContentStream API
+                    const contents: Content[] = messages.map((msg: {role: 'user' | 'model', text: string}) => ({
                         role: msg.role,
                         parts: [{ text: msg.text }]
                     }));
 
-                    const chat = ai.chats.create({
+                    const responseStream = await ai.models.generateContentStream({
                         model: GEMINI_MODEL,
+                        contents: contents,
                         config: {
-                            systemInstruction: systemInstruction || DEFAULT_SYSTEM_INSTRUCTION
-                        },
-                        history: history
+                           systemInstruction: systemInstruction || DEFAULT_SYSTEM_INSTRUCTION,
+                        }
                     });
 
-                    const lastMessage = messages[messages.length - 1].text;
-                    const resultStream = await chat.sendMessageStream({ message: lastMessage });
-                    await streamResponse(resultStream, controller);
+                    await streamResponse(responseStream, controller);
                     
                     controller.close();
                 } catch (e) {

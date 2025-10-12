@@ -1,22 +1,21 @@
 // src/utils/promptBuilder.ts
 
 import { Assessment } from '../types';
-import { REPORT_SECTIONS } from '../config/ai';
 
 /**
- * Builds the initial setup prompt.
- * This provides the AI with all the context for the report but asks it only to acknowledge
- * receipt of the information. This is a faster, more reliable initial step than asking for
- * generation immediately.
+ * Builds a self-contained prompt for generating a single section of the assessment report.
+ * This approach is stateless and ensures each API call is fast and independent,
+ * preventing serverless function timeouts.
+ *
  * @param details - The project details from the user form.
- * @returns A string containing the setup prompt.
+ * @param sectionToGenerate - The specific report section to generate (e.g., '1.0 Introduction').
+ * @returns A string containing the complete, self-contained prompt for the AI.
  */
-export const getSetupPrompt = (
-    details: Omit<Assessment, 'id' | 'report' | 'createdAt'>
+export const getSectionPrompt = (
+    details: Omit<Assessment, 'id' | 'report' | 'createdAt'>,
+    sectionToGenerate: string
 ): string => {
     const { projectName, projectProponent, location, projectType, description, assessmentType } = details;
-
-    const standardSections = REPORT_SECTIONS.map(s => `- **${s}**`).join('\n');
 
     let typeSpecificGuidance = '';
     switch (assessmentType) {
@@ -34,37 +33,40 @@ export const getSetupPrompt = (
             break;
         case 'Cumulative':
             typeSpecificGuidance = `
-This is a **Cumulative Impact Assessment**. Your analysis must be comprehensive.
-Within the 'Impact Assessment' section, you must:
+This is a **Cumulative Impact Assessment**. Your analysis for this section must be comprehensive.
+If generating the 'Impact Assessment' section, you must:
 1.  **Identify Other Projects**: Discuss the combined effects of this project with other past, present, and reasonably foreseeable future projects in the same geographical area.
 2.  **Analyze Pathways**: Evaluate how the impacts from different projects might interact (e.g., multiple projects drawing water from the same river).
-3.  **Assess Additive Effects**: Detail the total impact from all projects combined (e.g., total habitat loss).
-4.  **Assess Synergistic Effects**: Analyze where the combined impact is greater than the sum of individual impacts (e.g., minor pollutants from two sources combining to create a major health hazard).
-5.  **Define Boundaries**: Clearly state the geographical and time boundaries used for this cumulative analysis.`;
+3.  **Assess Additive & Synergistic Effects**: Detail the total impact from all projects combined (additive) and analyze where the combined impact is greater than the sum of individual impacts (synergistic).
+4.  **Define Boundaries**: Clearly state the geographical and time boundaries used for this cumulative analysis.`;
             break;
     }
 
     return `
-**CONTEXT FOR UPCOMING TASK**:
-I will be asking you to generate a professional impact assessment report, section by section. First, you must review and understand all the following context.
+**TASK**:
+Your task is to generate the content for a single section of a professional ${assessmentType} Impact Assessment report.
 
-**PROJECT DETAILS**:
+**CRITICAL INSTRUCTIONS**:
+1.  **GENERATE ONLY ONE SECTION**: Your entire response must be ONLY the content for the section titled "**${sectionToGenerate}**".
+2.  **START IMMEDIATELY**: Begin your response directly with the Markdown heading for this section (e.g., "### 1.0 Introduction"). Do NOT include any introductory text, pleasantries, or content from other sections.
+3.  **USE FULL CONTEXT**: Base your analysis on all the project details provided below.
+4.  **BE COMPREHENSIVE**: Ensure the content is detailed, professional, and reflects your expertise.
+5.  **USE MARKDOWN**: Format the output using Markdown (headings, lists, bold).
+
+---
+**FULL PROJECT CONTEXT**:
+
+**Project Details**:
 - **Project Name**: ${projectName}
 - **Proponent**: ${projectProponent}
 - **Location**: ${location}, Kenya
 - **Project Type**: ${projectType}
 - **Description**: ${description}
 
-**FULL REPORT STRUCTURE**:
-The final report will include these sections. I will ask for them one at a time.
-${standardSections}
-
-**SPECIFIC FOCUS FOR THIS "${assessmentType}" ASSESSMENT**:
+**Specific Focus for this "${assessmentType}" Assessment**:
 ${typeSpecificGuidance}
+---
 
-**CRITICAL INSTRUCTIONS FOR YOU**:
-1.  **Be Comprehensive**: When you generate sections, ensure they contain thorough, expert-level analysis based on the project details.
-2.  **Use Markdown**: Format the entire report using Markdown for clarity (headings, lists, bold text).
-3.  **Current Task**: Your immediate and ONLY task is to acknowledge that you have received and understood all this context. Respond with a short confirmation message, like "I have received the project details and am ready to begin generating the report sections." Do NOT generate any part of the report yet.
+Now, generate ONLY the content for the "**${sectionToGenerate}**" section.
 `;
 };
