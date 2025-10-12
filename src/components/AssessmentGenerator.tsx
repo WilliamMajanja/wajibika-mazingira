@@ -5,7 +5,7 @@ import { useToasts } from '../hooks/useToasts';
 import { Card } from './common/Card';
 import ReactMarkdown from 'react-markdown';
 import { ASSESSMENT_EXPERT_INSTRUCTION, REPORT_SECTIONS } from '../config/ai';
-import { getInitialAssessmentPrompt } from '../utils/promptBuilder';
+import { getSetupPrompt } from '../utils/promptBuilder';
 import { streamChatResponse } from '../services/geminiApiClient';
 
 const assessmentTypes: AssessmentType[] = ['Environmental', 'Social', 'Health', 'Climate', 'Cumulative'];
@@ -64,37 +64,52 @@ export const AssessmentGenerator: React.FC = () => {
     const chatHistory: { role: 'user' | 'model'; text: string }[] = [];
 
     try {
-        for (const section of REPORT_SECTIONS) {
-            let userMessage = '';
-            // For the first message, send the full detailed prompt
-            if (chatHistory.length === 0) {
-                userMessage = getInitialAssessmentPrompt(formData, section);
-            } else {
-                // For subsequent messages, send a simple instruction
-                userMessage = `Excellent. Now, generate ONLY the content for the "**${section}**" section. Start the response directly with the Markdown heading for this section. Do NOT generate any other sections, introductory text, or repeat previous content.`;
-            }
-            chatHistory.push({ role: 'user', text: userMessage });
+        // Step 1: Send all context in a "setup" prompt and get a simple acknowledgement.
+        // This is a fast, reliable first step that avoids timeouts.
+        const setupPrompt = getSetupPrompt(formData);
+        chatHistory.push({ role: 'user', text: setupPrompt });
 
-            const stream = await streamChatResponse({
+        const setupStream = await streamChatResponse({
+            messages: chatHistory,
+            systemInstruction: ASSESSMENT_EXPERT_INSTRUCTION,
+        });
+
+        // We need to read the acknowledgement stream to complete the turn, but we don't display it.
+        const setupReader = setupStream.getReader();
+        const decoder = new TextDecoder();
+        let acknowledgement = '';
+        while (true) {
+            const { done, value } = await setupReader.read();
+            if (done) break;
+            acknowledgement += decoder.decode(value, { stream: true });
+        }
+        chatHistory.push({ role: 'model', text: acknowledgement });
+        
+        // Step 2: Now that the AI has context, request each section one by one.
+        for (const section of REPORT_SECTIONS) {
+            const sectionPrompt = `Excellent. Now, generate ONLY the content for the "**${section}**" section. Start the response directly with the Markdown heading for this section. Do NOT generate any other sections, introductory text, or repeat previous content.`;
+            chatHistory.push({ role: 'user', text: sectionPrompt });
+
+            const sectionStream = await streamChatResponse({
                 messages: chatHistory,
                 systemInstruction: ASSESSMENT_EXPERT_INSTRUCTION,
             });
 
-            const reader = stream.getReader();
-            const decoder = new TextDecoder();
+            const sectionReader = sectionStream.getReader();
             let modelResponseForSection = '';
 
             while (true) {
-                const { done, value } = await reader.read();
+                const { done, value } = await sectionReader.read();
                 if (done) break;
                 
                 const chunk = decoder.decode(value, { stream: true });
                 modelResponseForSection += chunk;
                 fullReport += chunk;
+                // Stream the output to the UI in real-time
                 setGeneratedReport(prev => (prev ?? '') + chunk);
             }
 
-            // Add a newline between sections for better formatting if it's not already there
+            // Add a newline between sections for better formatting
             if (!fullReport.endsWith('\n\n')) {
                  fullReport += '\n\n';
                  setGeneratedReport(prev => (prev ?? '') + '\n\n');
@@ -110,6 +125,7 @@ export const AssessmentGenerator: React.FC = () => {
       if (finalReport) {
         addToast({ type: 'success', message: 'Assessment report generated successfully.' });
       } else {
+        // This case should be rare now, but kept for robustness
         setGeneratedReport(null);
         addToast({ type: 'error', message: 'The AI returned an empty response. Please try again.' });
       }

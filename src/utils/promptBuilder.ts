@@ -4,16 +4,15 @@ import { Assessment } from '../types';
 import { REPORT_SECTIONS } from '../config/ai';
 
 /**
- * Builds the complex initial prompt for the assessment generator AI.
- * This function defines the structure, content, and instructions the AI needs to
- * generate the first section of the report.
+ * Builds the initial setup prompt.
+ * This provides the AI with all the context for the report but asks it only to acknowledge
+ * receipt of the information. This is a faster, more reliable initial step than asking for
+ * generation immediately.
  * @param details - The project details from the user form.
- * @param sectionToGenerate - The specific section the AI should generate now.
- * @returns A string containing the full, detailed prompt.
+ * @returns A string containing the setup prompt.
  */
-export const getInitialAssessmentPrompt = (
-    details: Omit<Assessment, 'id' | 'report' | 'createdAt'>,
-    sectionToGenerate: string
+export const getSetupPrompt = (
+    details: Omit<Assessment, 'id' | 'report' | 'createdAt'>
 ): string => {
     const { projectName, projectProponent, location, projectType, description, assessmentType } = details;
 
@@ -46,7 +45,8 @@ Within the 'Impact Assessment' section, you must:
     }
 
     return `
-**TASK**: You will generate a report based on the following details, section by section as I request them.
+**CONTEXT FOR UPCOMING TASK**:
+I will be asking you to generate a professional impact assessment report, section by section. First, you must review and understand all the following context.
 
 **PROJECT DETAILS**:
 - **Project Name**: ${projectName}
@@ -56,15 +56,15 @@ Within the 'Impact Assessment' section, you must:
 - **Description**: ${description}
 
 **FULL REPORT STRUCTURE**:
-The final report will include these sections. You must generate them one at a time.
+The final report will include these sections. I will ask for them one at a time.
 ${standardSections}
 
 **SPECIFIC FOCUS FOR THIS "${assessmentType}" ASSESSMENT**:
 ${typeSpecificGuidance}
 
-**CRITICAL INSTRUCTIONS**:
-1.  **Be Comprehensive**: Ensure every section is present and contains thorough, expert-level analysis based on the project details provided.
+**CRITICAL INSTRUCTIONS FOR YOU**:
+1.  **Be Comprehensive**: When you generate sections, ensure they contain thorough, expert-level analysis based on the project details.
 2.  **Use Markdown**: Format the entire report using Markdown for clarity (headings, lists, bold text).
-3.  **Current Task**: Your immediate and ONLY task is to generate the content for the **"${sectionToGenerate}"** section. Start the response directly with the Markdown heading for this section (e.g., \`# 1.0 Introduction\`). Do NOT generate any other sections or introductory text.
+3.  **Current Task**: Your immediate and ONLY task is to acknowledge that you have received and understood all this context. Respond with a short confirmation message, like "I have received the project details and am ready to begin generating the report sections." Do NOT generate any part of the report yet.
 `;
 };
