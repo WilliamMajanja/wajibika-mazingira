@@ -5,13 +5,27 @@ import ReactMarkdown from 'react-markdown';
 import { useToasts } from '../hooks/useToasts';
 
 interface Message {
+    id: string;
     role: 'user' | 'model';
     text: string;
+    feedback?: 'up' | 'down';
 }
+
+const ThumbsUpIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" {...props}>
+        <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333V17a1 1 0 001 1h6.438a1 1 0 00.94-1.461l-2.12-4.24a1.5 1.5 0 01.282-1.77l1.395-1.395A1.5 1.5 0 0013.06 8H6.667a1.667 1.667 0 00-1.667 1.667z" />
+    </svg>
+);
+
+const ThumbsDownIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" {...props}>
+        <path d="M18 9.5a1.5 1.5 0 11-3 0v-6a1.5 1.5 0 013 0v6zM14 9.667V3a1 1 0 00-1-1H6.562a1 1 0 00-.94 1.461l2.12 4.24a1.5 1.5 0 01-.282 1.77l-1.395 1.395A1.5 1.5 0 006.94 12h6.393a1.667 1.667 0 001.667-1.667z" />
+    </svg>
+);
 
 export const CommunityChat: React.FC = () => {
     const [messages, setMessages] = React.useState<Message[]>([
-        { role: 'model', text: "Jambo! I am Mazingira Rafiki. How can I help you discuss the environmental and social topics in your community today?" }
+        { id: 'initial-greeting', role: 'model', text: "Jambo! I am Mazingira Rafiki. How can I help you discuss the environmental and social topics in your community today?" }
     ]);
     const [currentMessage, setCurrentMessage] = React.useState('');
     const [isLoading, setIsLoading] = React.useState(false);
@@ -26,13 +40,15 @@ export const CommunityChat: React.FC = () => {
     const handleSendMessage = async () => {
         if (!currentMessage.trim() || isLoading) return;
 
-        const userMessage: Message = { role: 'user', text: currentMessage };
+        const userMessage: Message = { id: `user-${Date.now()}`, role: 'user', text: currentMessage };
         
         // Construct the full history for the API, excluding the initial greeting
-        const historyForApi = [...messages.slice(1), userMessage];
+        const historyForApi = messages.slice(1).map(m => ({role: m.role, text: m.text}));
+        historyForApi.push({role: userMessage.role, text: userMessage.text});
 
         // Optimistically update UI with user message and model placeholder
-        setMessages(prev => [...prev, userMessage, { role: 'model', text: '' }]);
+        const modelMessageId = `model-${Date.now()}`;
+        setMessages(prev => [...prev, userMessage, { id: modelMessageId, role: 'model', text: '' }]);
         setCurrentMessage('');
         setIsLoading(true);
         
@@ -85,11 +101,20 @@ export const CommunityChat: React.FC = () => {
             setMessages(prev => {
                 // Remove the user's message and the model's placeholder
                 const revertedMessages = prev.slice(0, -2);
-                return [...revertedMessages, { role: 'model', text: 'Sorry, I encountered an error. Please try again.' }];
+                return [...revertedMessages, { id: `error-${Date.now()}`, role: 'model', text: 'Sorry, I encountered an error. Please try again.' }];
             });
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const handleFeedback = (messageId: string, feedback: 'up' | 'down') => {
+        setMessages(prev =>
+            prev.map(msg =>
+                msg.id === messageId ? { ...msg, feedback } : msg
+            )
+        );
+        addToast({ type: 'info', message: 'Thank you for your feedback!' });
     };
 
     return (
@@ -100,12 +125,38 @@ export const CommunityChat: React.FC = () => {
             </div>
             <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-slate-50/50">
                 {messages.map((msg, index) => (
-                    <div key={index} className={`flex items-end gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div key={msg.id} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                         <div className={`max-w-xl p-3 rounded-2xl ${msg.role === 'user' ? 'bg-brand-green-600 text-white rounded-br-none' : 'bg-white text-slate-800 rounded-bl-none shadow-sm'}`}>
                            <div className="prose prose-sm max-w-none prose-p:my-0 prose-p:text-inherit" style={{color: 'inherit'}}>
                              <ReactMarkdown>{msg.text || '...'}</ReactMarkdown>
                            </div>
                         </div>
+                        {msg.role === 'model' && index > 0 && (!isLoading || index < messages.length -1) && (
+                            <div className="mt-2 flex items-center gap-2">
+                                <button 
+                                    onClick={() => handleFeedback(msg.id, 'up')}
+                                    disabled={!!msg.feedback}
+                                    aria-label="Helpful"
+                                    className={`p-1 rounded-full transition-colors ${
+                                        msg.feedback === 'up' 
+                                        ? 'bg-green-100 text-green-600'
+                                        : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600 disabled:text-slate-300 disabled:bg-transparent disabled:cursor-default'
+                                    }`}>
+                                    <ThumbsUpIcon />
+                                </button>
+                                <button
+                                     onClick={() => handleFeedback(msg.id, 'down')}
+                                     disabled={!!msg.feedback}
+                                     aria-label="Not helpful"
+                                     className={`p-1 rounded-full transition-colors ${
+                                        msg.feedback === 'down' 
+                                        ? 'bg-red-100 text-red-600'
+                                        : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600 disabled:text-slate-300 disabled:bg-transparent disabled:cursor-default'
+                                    }`}>
+                                    <ThumbsDownIcon />
+                                </button>
+                            </div>
+                        )}
                     </div>
                 ))}
                  {isLoading && messages[messages.length-1]?.role === 'model' && messages[messages.length - 1]?.text === '' && (
