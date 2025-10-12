@@ -1,4 +1,4 @@
-/// <reference types="react" />
+
 import * as React from 'react';
 import { Assessment, AssessmentType } from '../types';
 import { generateImpactAssessment } from '../services/geminiService';

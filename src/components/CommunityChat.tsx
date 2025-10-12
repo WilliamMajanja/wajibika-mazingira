@@ -1,4 +1,4 @@
-/// <reference types="react" />
+
 import * as React from 'react';
 import { Card } from './common/Card';
 import ReactMarkdown from 'react-markdown';

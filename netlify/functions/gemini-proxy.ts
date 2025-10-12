@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Content } from "@google/genai";
 import type { Context } from "@netlify/functions";
 import type { Assessment } from "../../src/types";
@@ -99,7 +100,7 @@ export default async (req: Request, context: Context) => {
                         
                         const resultStream = await ai.models.generateContentStream({
                             model: 'gemini-2.5-flash',
-                            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                            contents: prompt,
                             config: {
                                 systemInstruction: "You are an expert Environmental Scientist, fully accredited by NEMA in Kenya. Your task is to generate a professional, detailed, and comprehensive impact assessment report based on the user's provided details.",
                             }
@@ -107,18 +108,21 @@ export default async (req: Request, context: Context) => {
                         await streamResponse(resultStream, controller);
 
                     } else if (type === 'chat') {
-                        const contents: Content[] = messages.map((msg: {role: 'user' | 'model', text: string}) => ({
+                        const history: Content[] = messages.slice(0, -1).map((msg: {role: 'user' | 'model', text: string}) => ({
                             role: msg.role,
                             parts: [{ text: msg.text }]
                         }));
-                        
-                        const resultStream = await ai.models.generateContentStream({
+
+                        const chat = ai.chats.create({
                             model: 'gemini-2.5-flash',
-                            contents: contents,
                             config: {
                                 systemInstruction: "You are 'Mazingira Rafiki', a helpful, anonymous AI assistant for a Kenyan community forum. Your goal is to facilitate constructive discussions about environmental and social impacts of local projects. Be neutral, informative, and encouraging. Do not provide legal advice. Keep responses concise and clear. All conversations are in English."
                             },
+                            history: history
                         });
+
+                        const lastMessage = messages[messages.length - 1].text;
+                        const resultStream = await chat.sendMessageStream({ message: lastMessage });
                         await streamResponse(resultStream, controller);
 
                     } else {
@@ -128,8 +132,8 @@ export default async (req: Request, context: Context) => {
                 } catch (e) {
                     const error = e as Error;
                     console.error("Gemini API Error in Stream:", error);
-                    // Use controller.error to propagate the error to the client fetch call
-                    controller.error(new Error("An error occurred while communicating with the AI."));
+                    // Propagate the actual error to the client fetch call, so the user sees a specific message.
+                    controller.error(error);
                 }
             }
         });
@@ -141,6 +145,6 @@ export default async (req: Request, context: Context) => {
     } catch (e) {
         const error = e as Error;
         console.error("Proxy function setup error:", error);
-        return new Response(JSON.stringify({ error: "Invalid request body or internal server error." }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+        return new Response(JSON.stringify({ error: error.message || "Invalid request body or internal server error." }), { status: 400, headers: { 'Content-Type': 'application/json' } });
     }
 };
