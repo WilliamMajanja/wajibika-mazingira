@@ -1,13 +1,79 @@
-
 import * as React from 'react';
 import { Assessment, AssessmentType } from '../types';
-import { generateImpactAssessment } from '../services/geminiService';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useToasts } from '../hooks/useToasts';
 import { Card } from './common/Card';
 import ReactMarkdown from 'react-markdown';
 
 const assessmentTypes: AssessmentType[] = ['Environmental', 'Social', 'Health', 'Climate', 'Cumulative'];
+
+const reportSections = [
+    '1.0 Introduction',
+    '2.0 Project Description',
+    '3.0 Baseline Conditions',
+    '4.0 Impact Assessment and Analysis',
+    '5.0 Mitigation Measures',
+    '6.0 Conclusion and Recommendations',
+];
+
+const getAssessmentPrompt = (
+    details: Omit<Assessment, 'id' | 'report' | 'createdAt'>,
+    sectionToGenerate: string
+): string => {
+    const { projectName, projectProponent, location, projectType, description, assessmentType } = details;
+
+    const standardSections = reportSections.map(s => `- **${s}**`).join('\n');
+
+    let typeSpecificGuidance = '';
+    switch (assessmentType) {
+        case 'Environmental':
+            typeSpecificGuidance = `Within the 'Impact Assessment' section, focus specifically on: ecosystems, biodiversity (flora and fauna), water resources (quality and quantity), soil quality, air quality, and noise pollution.`;
+            break;
+        case 'Social':
+            typeSpecificGuidance = `Within the 'Impact Assessment' section, focus specifically on: community displacement, local employment opportunities, cultural heritage sites, public services (schools, hospitals), social equity, and community cohesion.`;
+            break;
+        case 'Health':
+            typeSpecificGuidance = `Within the 'Impact Assessment' section, focus specifically on: public health impacts from air and water pollution, noise-related stress, changes in disease vectors, and impacts on local food and water sources.`;
+            break;
+        case 'Climate':
+            typeSpecificGuidance = `Within the 'Impact Assessment' section, focus specifically on: the project's greenhouse gas (GHG) emissions (carbon footprint), its vulnerability to climate change impacts (e.g., increased flooding, drought), and its alignment with Kenya's climate goals.`;
+            break;
+        case 'Cumulative':
+            typeSpecificGuidance = `
+This is a **Cumulative Impact Assessment**. Your analysis must be comprehensive.
+Within the 'Impact Assessment' section, you must:
+1.  **Identify Other Projects**: Discuss the combined effects of this project with other past, present, and reasonably foreseeable future projects in the same geographical area.
+2.  **Analyze Pathways**: Evaluate how the impacts from different projects might interact (e.g., multiple projects drawing water from the same river).
+3.  **Assess Additive Effects**: Detail the total impact from all projects combined (e.g., total habitat loss).
+4.  **Assess Synergistic Effects**: Analyze where the combined impact is greater than the sum of individual impacts (e.g., minor pollutants from two sources combining to create a major health hazard).
+5.  **Define Boundaries**: Clearly state the geographical and time boundaries used for this cumulative analysis.`;
+            break;
+    }
+
+    return `
+**TASK**: You will generate a report based on the following details, section by section as I request them.
+
+**PROJECT DETAILS**:
+- **Project Name**: ${projectName}
+- **Proponent**: ${projectProponent}
+- **Location**: ${location}, Kenya
+- **Project Type**: ${projectType}
+- **Description**: ${description}
+
+**FULL REPORT STRUCTURE**:
+The final report will include these sections. You must generate them one at a time.
+${standardSections}
+
+**SPECIFIC FOCUS FOR THIS "${assessmentType}" ASSESSMENT**:
+${typeSpecificGuidance}
+
+**CRITICAL INSTRUCTIONS**:
+1.  **Be Comprehensive**: Ensure every section is present and contains thorough, expert-level analysis based on the project details provided.
+2.  **Use Markdown**: Format the entire report using Markdown for clarity (headings, lists, bold text).
+3.  **Current Task**: Your immediate and ONLY task is to generate the content for the **"${sectionToGenerate}"** section. Start the response directly with the Markdown heading for this section (e.g., \`# 1.0 Introduction\`). Do NOT generate any other sections or introductory text.
+`;
+};
+
 
 const EditIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
@@ -30,7 +96,6 @@ export const AssessmentGenerator: React.FC = () => {
   const [editedReport, setEditedReport] = React.useState('');
   const [isEditing, setIsEditing] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
-  const [isReportIncomplete, setIsReportIncomplete] = React.useState(false);
   const [assessments, setAssessments] = useLocalStorage<Assessment[]>('assessments', []);
   const { addToast } = useToasts();
   const reportContainerRef = React.useRef<HTMLDivElement | null>(null);
@@ -52,48 +117,89 @@ export const AssessmentGenerator: React.FC = () => {
     }
 
     setIsLoading(true);
-    setGeneratedReport(''); // Show loading spinner and clear previous report
+    setGeneratedReport('');
     setEditedReport('');
     setIsEditing(false);
-    setIsReportIncomplete(false);
     
-    // On smaller screens, scroll to the report section so the user can see progress
     if (window.innerWidth < 768) {
         reportContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     let fullReport = '';
+    const chatHistory: { role: 'user' | 'model'; text: string }[] = [];
+    const systemInstruction = "You are an expert Environmental Scientist, fully accredited by NEMA in Kenya. Your task is to generate a professional, detailed, and comprehensive impact assessment report based on the user's provided details. You will be asked to generate the report section by section.";
+
     try {
-      await generateImpactAssessment(formData, (chunk) => {
-        fullReport += chunk;
-        setGeneratedReport(prev => (prev ?? '') + chunk);
-      });
+        for (const section of reportSections) {
+            let userMessage = '';
+            if (chatHistory.length === 0) {
+                userMessage = getAssessmentPrompt(formData, section);
+            } else {
+                userMessage = `Excellent. Now, generate ONLY the content for the "**${section}**" section. Start the response directly with the Markdown heading for this section. Do NOT generate any other sections, introductory text, or repeat previous content.`;
+            }
+            chatHistory.push({ role: 'user', text: userMessage });
 
-      // After stream is finished, process the full report
-      const completionMarker = '*** END OF REPORT ***';
-      const isComplete = fullReport.includes(completionMarker);
-      const finalReport = fullReport.replace(completionMarker, '').trim();
+            const response = await fetch('/api/gemini-proxy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: 'chat',
+                    messages: chatHistory,
+                    systemInstruction: systemInstruction,
+                }),
+            });
 
+            if (!response.ok || !response.body) {
+                let errorMessage = `HTTP error! status: ${response.status}`;
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.error || errorMessage;
+                } catch {
+                     const textError = await response.text();
+                     errorMessage = textError || errorMessage;
+                }
+                throw new Error(errorMessage);
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let modelResponseForSection = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                
+                const chunk = decoder.decode(value, { stream: true });
+                modelResponseForSection += chunk;
+                fullReport += chunk;
+                setGeneratedReport(prev => (prev ?? '') + chunk);
+            }
+
+            // Add a newline between sections for better formatting if it's not already there
+            if (!fullReport.endsWith('\n\n')) {
+                 fullReport += '\n\n';
+                 setGeneratedReport(prev => (prev ?? '') + '\n\n');
+            }
+
+            chatHistory.push({ role: 'model', text: modelResponseForSection });
+        }
+      
+      const finalReport = fullReport.trim();
       setGeneratedReport(finalReport);
       setEditedReport(finalReport);
       
-      if (finalReport.trim()) {
+      if (finalReport) {
         addToast({ type: 'success', message: 'Assessment report generated successfully.' });
-        if (!isComplete) {
-            setIsReportIncomplete(true);
-            addToast({ type: 'info', message: 'The AI may have been interrupted. Please review the report.' });
-        }
       } else {
-        // This case handles a successful stream that returned an empty response
         setGeneratedReport(null);
-        addToast({ type: 'error', message: 'The AI returned an empty response. Please try again or rephrase your project details.' });
+        addToast({ type: 'error', message: 'The AI returned an empty response. Please try again.' });
       }
 
     } catch (error) {
       console.error(error);
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
       addToast({ type: 'error', message: `Failed to generate report: ${errorMessage}` });
-      setGeneratedReport(null); // Clear report on any error
+      setGeneratedReport(null);
     } finally {
       setIsLoading(false);
     }
@@ -123,7 +229,6 @@ export const AssessmentGenerator: React.FC = () => {
     setAssessments([newAssessment, ...assessments]);
     addToast({ type: 'success', message: 'Assessment saved to Evidence Locker.' });
     
-    // Reset form and state
     setFormData({
         projectName: '', projectProponent: '', location: '', projectType: '', description: '',
         assessmentType: 'Environmental', assessorName: '', assessorType: '',
@@ -131,9 +236,7 @@ export const AssessmentGenerator: React.FC = () => {
     setGeneratedReport(null);
     setEditedReport('');
     setIsEditing(false);
-    setIsReportIncomplete(false);
   };
-
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 items-start">
@@ -223,19 +326,6 @@ export const AssessmentGenerator: React.FC = () => {
                     </div>
                 )}
             </div>
-             {isReportIncomplete && !isLoading && (
-                <div className="p-3 bg-yellow-100 border-b border-yellow-200 text-sm text-yellow-800 flex items-start space-x-3" role="alert">
-                    <div>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.21 3.03-1.742 3.03H4.42c-1.532 0-2.492-1.696-1.742-3.03l5.58-9.92zM10 13a1 1 0 110-2 1 1 0 010 2zm-1-4a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clipRule="evenodd" />
-                        </svg>
-                    </div>
-                    <div>
-                        <strong className="font-semibold">Potential Incomplete Report</strong>
-                        <p className="mt-1">The AI may have been interrupted. Please review the content carefully. If sections are missing, try generating the report again.</p>
-                    </div>
-                </div>
-            )}
             <div className="min-h-[50vh] md:h-[calc(100vh-16rem)] overflow-y-auto">
                 {isLoading && !generatedReport && (
                     <div className="p-6 flex flex-col items-center justify-center h-full text-slate-500 text-center">
