@@ -3,6 +3,7 @@ import * as React from 'react';
 import { Card } from './common/Card';
 import ReactMarkdown from 'react-markdown';
 import { useToasts } from '../hooks/useToasts';
+import { streamChatResponse } from '../services/geminiApiClient';
 
 interface Message {
     id: string;
@@ -53,28 +54,8 @@ export const CommunityChat: React.FC = () => {
         setIsLoading(true);
         
         try {
-            const response = await fetch('/api/gemini-proxy', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    type: 'chat',
-                    messages: historyForApi
-                })
-            });
-
-            if (!response.ok || !response.body) {
-                let errorMessage = `Chat API error: ${response.statusText}`;
-                 try {
-                    const errorData = await response.json();
-                    errorMessage = errorData.error || errorMessage;
-                } catch {
-                     const textError = await response.text();
-                     errorMessage = textError || errorMessage;
-                }
-                throw new Error(errorMessage);
-            }
-            
-            const reader = response.body.getReader();
+            const stream = await streamChatResponse({ messages: historyForApi });
+            const reader = stream.getReader();
             const decoder = new TextDecoder();
             
             let done = false;
