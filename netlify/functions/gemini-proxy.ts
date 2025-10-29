@@ -1,4 +1,4 @@
-import { GoogleGenAI, Content, Modality, GenerateContentResponse } from "@google/genai";
+import { GoogleGenAI, Modality, GenerateContentResponse } from "@google/genai";
 import type { Context } from "@netlify/functions";
 
 const { API_KEY } = process.env;
@@ -34,44 +34,23 @@ export default async (req: Request, context: Context) => {
             let jsonResponseData: object | null = null;
 
             switch (task) {
-                case 'groundedSearch': {
-                    const { messages, model, systemInstruction } = body;
-                    
-                    const chat = ai.chats.create({
-                        model: model,
-                        config: { 
-                            systemInstruction,
-                            tools: [{ googleSearch: {} }] 
-                        }
-                    });
-
-                    const lastMessage = messages.pop();
-                    chat.history = messages.map((msg: { role: string; text: string; }) => ({ role: msg.role, parts: [{ text: msg.text }] }));
-
-                    response = await chat.sendMessage({ message: lastMessage.text });
-                    
-                    jsonResponseData = {
-                        text: response.text,
-                        sources: response.candidates?.[0]?.groundingMetadata?.groundingChunks || [],
-                    };
-                    break;
-                }
+                case 'groundedSearch':
                 case 'groundedMaps': {
                     const { messages, model, systemInstruction, latLng } = body;
+                    const contents = messages.map((msg: { role: string; text: string; }) => ({ role: msg.role, parts: [{ text: msg.text }] }));
                     
-                    const chat = ai.chats.create({
+                    const tools = task === 'groundedSearch' ? [{ googleSearch: {} }] : [{ googleMaps: {} }];
+                    const toolConfig = (task === 'groundedMaps' && latLng) ? { retrievalConfig: { latLng } } : undefined;
+
+                    response = await ai.models.generateContent({
                         model: model,
+                        contents: contents,
                         config: { 
-                            systemInstruction,
-                            tools: [{ googleMaps: {} }],
-                            toolConfig: latLng ? { retrievalConfig: { latLng } } : undefined
+                            systemInstruction, 
+                            tools, 
+                            ...(toolConfig && { toolConfig })
                         }
                     });
-
-                    const lastMessage = messages.pop();
-                    chat.history = messages.map((msg: { role: string; text: string; }) => ({ role: msg.role, parts: [{ text: msg.text }] }));
-
-                    response = await chat.sendMessage({ message: lastMessage.text });
                     
                     jsonResponseData = {
                         text: response.text,
@@ -110,19 +89,7 @@ export default async (req: Request, context: Context) => {
                     let responseStream: AsyncGenerator<GenerateContentResponse, any, any>;
                     
                     switch (task) {
-                        case 'chat': {
-                             const { messages, model, systemInstruction } = body;
-                             const chat = ai.chats.create({
-                                model: model,
-                                config: { systemInstruction }
-                             });
-                             const lastMessage = messages.pop();
-                             if (messages.length > 0) {
-                                chat.history = messages.map((msg: { role: string; text: string; }) => ({ role: msg.role, parts: [{ text: msg.text }] }));
-                             }
-                             responseStream = await chat.sendMessageStream({ message: lastMessage.text });
-                             break;
-                        }
+                        case 'chat':
                         case 'complexGeneration': {
                              const { messages, model, systemInstruction } = body;
                              const contents = messages.map((msg: { role: string; text: string; }) => ({ role: msg.role, parts: [{ text: msg.text }] }));
@@ -131,7 +98,7 @@ export default async (req: Request, context: Context) => {
                                 contents: contents,
                                 config: {
                                     systemInstruction: systemInstruction,
-                                    thinkingConfig: { thinkingBudget: 32768 }
+                                    ...(task === 'complexGeneration' && { thinkingConfig: { thinkingBudget: 32768 } })
                                 }
                              });
                              break;
@@ -139,18 +106,26 @@ export default async (req: Request, context: Context) => {
                         case 'analyzeImage': {
                             const { prompt, image, mimeType, model } = body;
                             const imagePart = { inlineData: { data: image, mimeType: mimeType } };
+                            const contents = {
+                                role: 'user',
+                                parts: [{ text: prompt }, imagePart]
+                            };
                             responseStream = await ai.models.generateContentStream({
                                 model: model,
-                                contents: { parts: [{ text: prompt }, imagePart] },
+                                contents: contents,
                             });
                             break;
                         }
                         case 'transcribeAudio': {
                             const { audio, mimeType, model } = body;
                             const audioPart = { inlineData: { data: audio, mimeType: mimeType } };
+                            const contents = {
+                                role: 'user',
+                                parts: [{ text: "Transcribe this audio recording accurately." }, audioPart]
+                            };
                             responseStream = await ai.models.generateContentStream({
                                 model: model,
-                                contents: { parts: [{ text: "Transcribe this audio recording accurately." }, audioPart] },
+                                contents: contents,
                             });
                             break;
                         }
