@@ -16,29 +16,31 @@
   <img alt="Technology" src="https://img.shields.io/badge/Netlify-00C7B7?style=for-the-badge&logo=netlify&logoColor=white">
 </p>
 
-**Wajibika Mazingira** (Swahili for "Be Responsible for the Environment") is a powerful, serverless web application designed to democratize environmental and social impact assessments in Kenya. It leverages the Google Gemini API to provide communities, activists, and planners with instant, detailed reports, a secure place to store evidence, and an AI-powered assistant for community discussions.
+**Wajibika Mazingira** (Swahili for "Be Responsible for the Environment") is a powerful, serverless web application designed to democratize environmental and social impact assessments in Kenya. It leverages the Google Gemini API to provide communities with instant, detailed reports, a secure evidence locker with AI-powered analysis, and an advanced, multi-modal community assistant.
 
 ---
 
 ## ✨ Features Showcase
 
 ### 1. AI Impact Assessment Generator
-Generate five distinct types of impact assessments (Environmental, Social, Health, Climate, Cumulative) tailored to your project. 
+Generate five distinct types of impact assessments. Now featuring a **Deep Analysis** mode powered by `gemini-2.5-pro` with a maxed-out `thinkingBudget` for tackling the most complex project analyses.
 
 ![Screenshot of the AI Impact Assessment Generator interface, showing the form on the left and a generated report on the right.](https://storage.googleapis.com/aistudio-programmable-ui-project-assets/wajibika-mazingira-demo/assessment-generator.png)
 
-### 2. Professional PDF Exports
-Export any generated assessment as a polished, professional PDF, ready for printing and official use.
-
-![Screenshot of the professionally formatted PDF document, showing a clear header, metadata section, and formatted report content.](https://storage.googleapis.com/aistudio-programmable-ui-project-assets/wajibika-mazingira-demo/pdf-export.png)
-
-### 3. Secure Evidence Locker
-All generated assessments are saved directly in your browser's local storage. The Evidence Locker provides a secure, private, and offline-accessible space to review, manage, delete, and re-export your reports.
+### 2. Secure Evidence Locker with Image Analysis
+Securely store reports and now, upload photographic evidence. Use the power of `gemini-2.5-flash` to get an instant AI analysis of your images, identifying potential environmental issues.
 
 ![Screenshot of the Evidence Locker, displaying a list of saved assessments on the left and the content of the selected report on the right.](https://storage.googleapis.com/aistudio-programmable-ui-project-assets/wajibika-mazingira-demo/evidence-locker.png)
 
-### 4. AI Community Assistant
-Engage in a real-time conversation with "Mazingira Rafiki," an AI assistant fine-tuned to discuss environmental and social topics within the Kenyan context.
+### 3. Advanced AI Community Assistant
+Engage with "Mazingira Rafiki," an AI assistant with new capabilities:
+- **Voice-to-Text**: Speak your message directly into the chat for transcription.
+- **Text-to-Speech**: Listen to the AI's responses.
+- **Multi-Mode Operation**:
+    - **Fast Mode** (`gemini-2.5-flash-lite`): For quick, low-latency answers.
+    - **Smart Mode** (`gemini-2.5-flash`): For balanced, intelligent conversation.
+    - **Grounded Mode** (`gemini-2.5-flash` with Google Search): For up-to-date, factual answers on recent topics, complete with citations.
+    - **Maps Mode** (`gemini-2.5-flash` with Google Maps): For location-based questions like "find recycling centers near me," with links to places on Google Maps.
 
 ![Screenshot of the AI Community Assistant chat interface, showing a conversation between a user and the AI bot.](https://storage.googleapis.com/aistudio-programmable-ui-project-assets/wajibika-mazingira-demo/ai-assistant.png)
 
@@ -46,11 +48,12 @@ Engage in a real-time conversation with "Mazingira Rafiki," an AI assistant fine
 
 ## 🚀 Core Capabilities
 
--   **Secure AI Backend**: Uses Netlify Functions to protect the Gemini API key, ensuring it's never exposed to the browser.
--   **Dynamic AI Assessment Generation**: Create detailed reports for various impact categories.
--   **Customizable PDF Reports**: Add project proponents and optional assessor details for official documentation.
+-   **Multi-Modal AI Backend**: Uses a versatile Netlify Function to securely handle requests for text generation, image analysis, audio transcription, and text-to-speech with various Gemini models.
+-   **Dynamic AI Assessment Generation**: Create detailed reports with standard or deep-analysis modes.
+-   **Visual Evidence Analysis**: Upload and analyze images for environmental context.
+-   **Multi-Mode Chat**: Switch between fast, smart, search-grounded, and map-grounded conversation modes.
+-   **Accessible Communication**: Use voice-to-text for input and text-to-speech for output.
 -   **Secure & Private Storage**: All data is stored exclusively in the browser via `localStorage`.
--   **Real-time Streaming Chat**: Get instant, streaming responses from the specialized AI assistant.
 -   **Fully Responsive**: A seamless experience on desktop, tablet, and mobile devices.
 
 ---
@@ -59,7 +62,7 @@ Engage in a real-time conversation with "Mazingira Rafiki," an AI assistant fine
 
 -   **Frontend**: React, TypeScript, Vite
 -   **Styling**: Tailwind CSS
--   **AI Model**: Google Gemini API (`gemini-2.5-flash`)
+-   **AI Models**: Google Gemini API (`gemini-2.5-pro`, `gemini-2.5-flash`, `gemini-2.5-flash-lite`, `gemini-2.5-flash-preview-tts`)
 -   **Backend**: Serverless via Netlify Functions
 -   **Client-side Storage**: `useLocalStorage` custom hook
 -   **Deployment**: Netlify

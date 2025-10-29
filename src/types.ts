@@ -2,6 +2,15 @@ export type Page = 'assessment' | 'chat' | 'locker';
 
 export type AssessmentType = 'Environmental' | 'Social' | 'Health' | 'Climate' | 'Cumulative';
 
+export interface Evidence {
+  id: string;
+  type: 'image';
+  name: string;
+  data: string; // base64 data URL
+  analysis?: string;
+  isAnalyzing?: boolean;
+}
+
 export interface Assessment {
   id: string;
   projectName: string;
@@ -14,6 +23,7 @@ export interface Assessment {
   createdAt: string; // ISO string date
   assessorName?: string;
   assessorType?: string;
+  evidence?: Evidence[];
 }
 
 export interface Toast {

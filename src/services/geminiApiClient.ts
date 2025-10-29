@@ -1,37 +1,47 @@
 // src/services/geminiApiClient.ts
+import { MODELS } from "../config/ai";
 
-// A client for interacting with our Netlify gemini-proxy serverless function.
-// This centralizes API calls, streaming logic, and error handling.
-
-interface StreamChatResponseParams {
-    messages: { role: 'user' | 'model'; text: string }[];
-    systemInstruction?: string;
-}
-
-export const streamChatResponse = async ({ messages, systemInstruction }: StreamChatResponseParams): Promise<ReadableStream<Uint8Array>> => {
+// Generic function for streaming responses from the Gemini proxy
+export const streamGeminiResponse = async (task: string, payload: object): Promise<ReadableStream<Uint8Array>> => {
     const response = await fetch('/api/gemini-proxy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            type: 'chat', // The only type our proxy supports now
-            messages,
-            systemInstruction, // If undefined, the proxy will use its default instruction
+            stream: true,
+            task,
+            ...payload
         }),
     });
     
     if (!response.ok || !response.body) {
-        let errorMessage = `API error: ${response.status} ${response.statusText}`;
-        try {
-            // Try to parse a JSON error from the proxy
-            const errorData = await response.json();
-            errorMessage = errorData.error || errorMessage;
-        } catch {
-            // Fallback to text if JSON parsing fails
-            const textError = await response.text();
-            errorMessage = textError || errorMessage;
-        }
-        throw new Error(errorMessage);
+        const errorText = await response.text();
+        throw new Error(`API error: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
     return response.body;
+}
+
+// Generic function for non-streaming responses from the Gemini proxy
+export const generateGeminiResponse = async (task: string, payload: object): Promise<any> => {
+     const response = await fetch('/api/gemini-proxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            stream: false,
+            task,
+            ...payload
+        }),
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`API error: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+
+    return response.json();
+}
+
+// Specific helper for TTS
+export const generateTextToSpeech = async (text: string): Promise<{ audioContent: string }> => {
+    return generateGeminiResponse('tts', { text, model: MODELS.tts });
 }

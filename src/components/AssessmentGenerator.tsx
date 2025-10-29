@@ -4,9 +4,9 @@ import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useToasts } from '../hooks/useToasts';
 import { Card } from './common/Card';
 import ReactMarkdown from 'react-markdown';
-import { ASSESSMENT_EXPERT_INSTRUCTION, REPORT_SECTIONS } from '../config/ai';
+import { MODELS, ASSESSMENT_EXPERT_INSTRUCTION, REPORT_SECTIONS } from '../config/ai';
 import { getSectionPrompt } from '../utils/promptBuilder';
-import { streamChatResponse } from '../services/geminiApiClient';
+import { streamGeminiResponse } from '../services/geminiApiClient';
 
 const assessmentTypes: AssessmentType[] = ['Environmental', 'Social', 'Health', 'Climate', 'Cumulative'];
 
@@ -17,7 +17,7 @@ const EditIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 export const AssessmentGenerator: React.FC = () => {
-  const [formData, setFormData] = React.useState<Omit<Assessment, 'id' | 'report' | 'createdAt'>>({
+  const [formData, setFormData] = React.useState<Omit<Assessment, 'id' | 'report' | 'createdAt' | 'evidence'>>({
     projectName: '',
     projectProponent: '',
     location: '',
@@ -31,6 +31,7 @@ export const AssessmentGenerator: React.FC = () => {
   const [editedReport, setEditedReport] = React.useState('');
   const [isEditing, setIsEditing] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
+  const [useDeepAnalysis, setUseDeepAnalysis] = React.useState(false);
   const [assessments, setAssessments] = useLocalStorage<Assessment[]>('assessments', []);
   const { addToast } = useToasts();
   const reportContainerRef = React.useRef<HTMLDivElement | null>(null);
@@ -64,30 +65,27 @@ export const AssessmentGenerator: React.FC = () => {
     
     try {
       const decoder = new TextDecoder();
+      const model = useDeepAnalysis ? MODELS.pro : MODELS.flash;
+      const task = useDeepAnalysis ? 'complexGeneration' : 'chat';
 
-      // Generate each section of the report with a separate, stateless API call.
-      // This is robust and avoids serverless function timeouts.
       for (const section of REPORT_SECTIONS) {
           const sectionPrompt = getSectionPrompt(formData, section);
           
-          const sectionStream = await streamChatResponse({
+          const sectionStream = await streamGeminiResponse(task, {
               messages: [{ role: 'user', text: sectionPrompt }],
               systemInstruction: ASSESSMENT_EXPERT_INSTRUCTION,
+              model,
           });
 
           const sectionReader = sectionStream.getReader();
-
           while (true) {
               const { done, value } = await sectionReader.read();
               if (done) break;
               
               const chunk = decoder.decode(value, { stream: true });
               fullReport += chunk;
-              // Stream the output to the UI in real-time
               setGeneratedReport(prev => (prev ?? '') + chunk);
           }
-
-          // Add a newline between sections for better formatting
           if (!fullReport.endsWith('\n\n')) {
                fullReport += '\n\n';
                setGeneratedReport(prev => (prev ?? '') + '\n\n');
@@ -101,7 +99,6 @@ export const AssessmentGenerator: React.FC = () => {
       if (finalReport) {
         addToast({ type: 'success', message: 'Assessment report generated successfully.' });
       } else {
-        // This case should be rare now, but kept for robustness
         setGeneratedReport(null);
         addToast({ type: 'error', message: 'The AI returned an empty response. Please try again.' });
       }
@@ -135,6 +132,7 @@ export const AssessmentGenerator: React.FC = () => {
         ...formData,
         report: isEditing ? editedReport : generatedReport,
         createdAt: new Date().toISOString(),
+        evidence: [],
     };
     
     setAssessments([newAssessment, ...assessments]);
@@ -202,6 +200,21 @@ export const AssessmentGenerator: React.FC = () => {
                         </div>
                      </div>
                 </div>
+                <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200">
+                    <div>
+                        <label htmlFor="deepAnalysis" className="font-medium text-slate-700">Deep Analysis</label>
+                        <p className="text-xs text-slate-500">Uses a more powerful AI model for complex topics. Slower generation.</p>
+                    </div>
+                    <button
+                        type="button"
+                        role="switch"
+                        aria-checked={useDeepAnalysis}
+                        onClick={() => setUseDeepAnalysis(!useDeepAnalysis)}
+                        className={`${useDeepAnalysis ? 'bg-brand-green-600' : 'bg-slate-200'} relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand-green-500 focus:ring-offset-2`}
+                    >
+                        <span className={`${useDeepAnalysis ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}/>
+                    </button>
+                </div>
             </div>
             <div className="p-4 bg-slate-50 border-t border-slate-200">
                 <button type="submit" disabled={isLoading || !isFormValid()} className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-brand-green-600 hover:bg-brand-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-green-500 disabled:bg-slate-400 disabled:cursor-not-allowed">
@@ -220,7 +233,6 @@ export const AssessmentGenerator: React.FC = () => {
         </Card>
       </div>
       
-      {/* Report Section */}
       <div className="md:col-span-1 lg:col-span-3" ref={reportContainerRef}>
         <Card>
             <div className="p-4 border-b border-slate-200 flex justify-between items-center min-h-[65px]">
@@ -253,7 +265,7 @@ export const AssessmentGenerator: React.FC = () => {
                          <textarea
                             value={editedReport}
                             onChange={(e) => setEditedReport(e.target.value)}
-                            className="w-full h-full p-6 bg-slate-50 border-0 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-brand-green-500 font-mono text-sm leading-relaxed"
+                            className="w-full h-full p-6 bg-slate-50 border-0 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-brand-green-500 font-mono text-sm leading-relaxed resize-none"
                             aria-label="Report Editor"
                         />
                     ) : (

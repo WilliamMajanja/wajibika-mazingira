@@ -2,11 +2,23 @@
 
 // Centralized configuration for AI models and prompts
 
-// The AI model to use for all features
-export const GEMINI_MODEL = 'gemini-2.5-flash';
+export const MODELS = {
+    // Fast, for low-latency chat
+    flash_lite: 'gemini-2.5-flash-lite',
+    // Standard, balanced model for chat and analysis
+    flash: 'gemini-2.5-flash',
+    // Advanced, for complex reasoning and deep analysis
+    pro: 'gemini-2.5-pro',
+    // Text-to-Speech
+    tts: 'gemini-2.5-flash-preview-tts',
+};
+
 
 // System instruction for the Assessment Generator AI persona
 export const ASSESSMENT_EXPERT_INSTRUCTION = "You are an expert Environmental Scientist, fully accredited by NEMA in Kenya. Your task is to generate a professional, detailed, and comprehensive impact assessment report based on the user's provided details. You will be asked to generate the report section by section.";
+
+// System instruction for the Community Chat AI persona
+export const CHAT_DEFAULT_SYSTEM_INSTRUCTION = "You are 'Mazingira Rafiki', a helpful, anonymous AI assistant for a Kenyan community forum. Your goal is to facilitate constructive discussions about environmental and social impacts of local projects. Be neutral, informative, and encouraging. Do not provide legal advice. Keep responses concise and clear. All conversations are in English.";
 
 // Sections for the assessment report, to be requested sequentially
 export const REPORT_SECTIONS = [
