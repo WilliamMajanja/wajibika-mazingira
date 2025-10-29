@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Modality, GenerateContentResponse, Part } from "@google/genai";
 import type { Context } from "@netlify/functions";
 
@@ -116,10 +117,9 @@ export default async (req: Request, context: Context) => {
                         case 'transcribeAudio': {
                             const { audio, mimeType, model } = body;
                             const audioPart: Part = { inlineData: { data: audio, mimeType: mimeType } };
-                            const textPart: Part = { text: "Transcribe this audio recording accurately." };
                             responseStream = await ai.models.generateContentStream({
                                 model: model,
-                                contents: [{ role: 'user', parts: [textPart, audioPart] }],
+                                contents: [{ role: 'user', parts: [audioPart] }],
                             });
                             break;
                         }
