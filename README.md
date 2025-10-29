@@ -3,7 +3,7 @@
   <h1>Wajibika Mazingira</h1>
   <p><strong>Empowering Kenyan communities with AI-driven environmental oversight.</strong></p>
   <p>
-    <a href="https://app.aistudio.google.com/github/googlestaging/prodx-apps/blob/main/demos/wajibika-mazingira?branch=main" target="_blank"><img alt="Open in Project IDX" src="https://lh3.googleusercontent.com/some-random-string/w210-h40-p/G-C-black-lockup-2x.png" /></a>
+    <a href="https://idx.google.com/from/github.com/google-dev-demos/wajibika-mazingira" target="_blank"><img alt="Open in Project IDX" src="https://idx.google.com/assets/badge.svg" /></a>
   </p>
 </div>
 
@@ -22,15 +22,17 @@
 
 ## ✨ Features Showcase
 
+Wajibika Mazingira is built on three core pillars, each designed to empower local communities:
+
 ### 1. AI Impact Assessment Generator
 Generate five distinct types of impact assessments. Now featuring a **Deep Analysis** mode powered by `gemini-2.5-pro` with a maxed-out `thinkingBudget` for tackling the most complex project analyses.
 
-![Screenshot of the AI Impact Assessment Generator interface, showing the form on the left and a generated report on the right.](https://storage.googleapis.com/aistudio-programmable-ui-project-assets/wajibika-mazingira-demo/assessment-generator.png)
+![Screenshot showing the AI Impact Assessment Generator feature of Wajibika Mazingira. The form for project details is on the left, and the generated report is on the right.](https://storage.googleapis.com/aistudio-programmable-ui-project-assets/wajibika-mazingira-prod/wajibika-mazingira-assessment.png)
 
 ### 2. Secure Evidence Locker with Image Analysis
-Securely store reports and now, upload photographic evidence. Use the power of `gemini-2.5-flash` to get an instant AI analysis of your images, identifying potential environmental issues.
+Securely store reports and upload photographic evidence. Use the power of `gemini-2.5-flash` to get an instant AI analysis of your images, identifying potential environmental issues.
 
-![Screenshot of the Evidence Locker, displaying a list of saved assessments on the left and the content of the selected report on the right.](https://storage.googleapis.com/aistudio-programmable-ui-project-assets/wajibika-mazingira-demo/evidence-locker.png)
+![Screenshot showing the Evidence Locker feature of Wajibika Mazingira. A list of saved assessments is on the left, and the selected report with an uploaded image is on the right.](https://storage.googleapis.com/aistudio-programmable-ui-project-assets/wajibika-mazingira-prod/wajibika-mazingira-locker.png)
 
 ### 3. Advanced AI Community Assistant
 Engage with "Mazingira Rafiki," an AI assistant with new capabilities:
@@ -42,7 +44,7 @@ Engage with "Mazingira Rafiki," an AI assistant with new capabilities:
     - **Grounded Mode** (`gemini-2.5-flash` with Google Search): For up-to-date, factual answers on recent topics, complete with citations.
     - **Maps Mode** (`gemini-2.5-flash` with Google Maps): For location-based questions like "find recycling centers near me," with links to places on Google Maps.
 
-![Screenshot of the AI Community Assistant chat interface, showing a conversation between a user and the AI bot.](https://storage.googleapis.com/aistudio-programmable-ui-project-assets/wajibika-mazingira-demo/ai-assistant.png)
+![Screenshot showing the AI Community Assistant feature of Wajibika Mazingira. A chat interface displays a conversation between a user and the AI, with chat mode selectors visible.](https://storage.googleapis.com/aistudio-programmable-ui-project-assets/wajibika-mazingira-prod/wajibika-mazingira-chat.png)
 
 ---
 
@@ -76,7 +78,7 @@ This project is now configured with a standard build process.
 ### Prerequisites
 
 -   Node.js and npm
--   A valid **Google Gemini API Key**.
+-   A valid **Google Gemini API Key**. You can get one from [Google AI Studio](https://aistudio.google.com/app/apikey).
 -   [Netlify CLI](https://docs.netlify.com/cli/get-started/) (for local development)
 
 ### Running Locally

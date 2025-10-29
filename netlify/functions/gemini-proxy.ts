@@ -1,10 +1,10 @@
-import { GoogleGenAI, Modality, GenerateContentResponse } from "@google/genai";
+import { GoogleGenAI, Modality, GenerateContentResponse, Part } from "@google/genai";
 import type { Context } from "@netlify/functions";
 
 const { API_KEY } = process.env;
 
 // Helper to stream text response
-const streamTextResponse = async (stream: AsyncGenerator<any>, controller: ReadableStreamDefaultController) => {
+const streamTextResponse = async (stream: AsyncGenerator<GenerateContentResponse>, controller: ReadableStreamDefaultController) => {
     for await (const chunk of stream) {
         const chunkText = chunk.text;
         if (chunkText) {
@@ -62,7 +62,7 @@ export default async (req: Request, context: Context) => {
                     const { text, model } = body;
                      response = await ai.models.generateContent({
                         model: model,
-                        contents: [{ parts: [{ text: `Say it naturally: ${text}` }] }],
+                        contents: [{ parts: [{ text: `Say cheerfully: ${text}` }] }],
                         config: {
                             responseModalities: [Modality.AUDIO],
                             speechConfig: {
@@ -105,27 +105,21 @@ export default async (req: Request, context: Context) => {
                         }
                         case 'analyzeImage': {
                             const { prompt, image, mimeType, model } = body;
-                            const imagePart = { inlineData: { data: image, mimeType: mimeType } };
-                            const contents = {
-                                role: 'user',
-                                parts: [{ text: prompt }, imagePart]
-                            };
+                            const imagePart: Part = { inlineData: { data: image, mimeType: mimeType } };
+                            const textPart: Part = { text: prompt };
                             responseStream = await ai.models.generateContentStream({
                                 model: model,
-                                contents: contents,
+                                contents: [{ role: 'user', parts: [textPart, imagePart] }],
                             });
                             break;
                         }
                         case 'transcribeAudio': {
                             const { audio, mimeType, model } = body;
-                            const audioPart = { inlineData: { data: audio, mimeType: mimeType } };
-                            const contents = {
-                                role: 'user',
-                                parts: [{ text: "Transcribe this audio recording accurately." }, audioPart]
-                            };
+                            const audioPart: Part = { inlineData: { data: audio, mimeType: mimeType } };
+                            const textPart: Part = { text: "Transcribe this audio recording accurately." };
                             responseStream = await ai.models.generateContentStream({
                                 model: model,
-                                contents: contents,
+                                contents: [{ role: 'user', parts: [textPart, audioPart] }],
                             });
                             break;
                         }
