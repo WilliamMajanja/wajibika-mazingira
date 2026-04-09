@@ -58,7 +58,10 @@ export const Header: React.FC<HeaderProps> = ({ activePage, setActivePage }) => 
         <div className="flex items-center justify-between h-16 sm:h-20">
           <div className="flex items-center gap-3">
             <LogoIcon className="h-8 w-8 sm:h-10 sm:w-10"/>
-            <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Wajibika Mazingira</h1>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Wajibika Mazingira</h1>
+              <p className="text-xs text-brand-green-300 hidden sm:block">minima PiNet OS · by William Majanja</p>
+            </div>
           </div>
           <nav className="flex space-x-2 bg-brand-green-950/50 p-2 rounded-xl">
             <NavItem label="Impact Assessment" page="assessment" activePage={activePage} onClick={setActivePage} Icon={ClipboardIcon}/>
