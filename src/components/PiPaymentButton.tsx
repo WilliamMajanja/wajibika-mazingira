@@ -21,7 +21,7 @@ interface PiPaymentButtonProps {
 }
 
 const PiIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+  <svg viewBox="0 0 24 24" fill="currentColor" role="img" aria-label="Pi currency" {...props}>
     <text x="4" y="18" fontSize="16" fontWeight="bold" fontFamily="serif">π</text>
   </svg>
 );
