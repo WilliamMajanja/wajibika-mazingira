@@ -2,6 +2,7 @@
   <img src="https://storage.googleapis.com/aistudio-programmable-ui-project-assets/wajibika-mazingira-demo/logo.svg" alt="Wajibika Mazingira Logo" width="150">
   <h1>Wajibika Mazingira</h1>
   <p><strong>Empowering Kenyan communities with AI-driven environmental oversight.</strong></p>
+  <p><em>A minima PiNet OS project by William Majanja</em></p>
   <p>
     <a href="https://idx.google.com/from/github.com/google-dev-demos/wajibika-mazingira" target="_blank"><img alt="Open in Project IDX" src="https://idx.google.com/assets/badge.svg" /></a>
   </p>
@@ -16,7 +17,9 @@
   <img alt="Technology" src="https://img.shields.io/badge/Netlify-00C7B7?style=for-the-badge&logo=netlify&logoColor=white">
 </p>
 
-**Wajibika Mazingira** (Swahili for "Be Responsible for the Environment") is a powerful, serverless web application designed to democratize environmental and social impact assessments in Kenya. It leverages the Google Gemini API to provide communities with instant, detailed reports, a secure evidence locker with AI-powered analysis, and an advanced, multi-modal community assistant.
+**Wajibika Mazingira** (Swahili for "Be Responsible for the Environment") is a powerful, serverless web application designed to democratize environmental and social impact assessments in Kenya. Built as part of the **minima PiNet OS** ecosystem by **William Majanja**, it leverages the Google Gemini API to provide communities with instant, detailed reports, a secure evidence locker with AI-powered analysis, and an advanced, multi-modal community assistant.
+
+> **Note:** This project is **not** affiliated with or related to Pi Network (the cryptocurrency). It is an independent project under the minima PiNet OS initiative by William Majanja.
 
 ---
 
