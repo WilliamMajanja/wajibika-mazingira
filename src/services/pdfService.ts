@@ -1,20 +1,29 @@
 import { Assessment } from '../types';
 import { marked } from 'marked';
 import html2pdf from 'html2pdf.js';
+import { escapeHtml } from '../utils/sanitize';
 
 export const exportToPdf = (assessment: Assessment) => {
+    const safeProjectName = escapeHtml(assessment.projectName);
+    const safeProponent = escapeHtml(assessment.projectProponent);
+    const safeLocation = escapeHtml(assessment.location);
+    const safeProjectType = escapeHtml(assessment.projectType);
+    const safeAssessmentType = escapeHtml(assessment.assessmentType);
+    const safeAssessorName = assessment.assessorName ? escapeHtml(assessment.assessorName) : '';
+    const safeAssessorType = assessment.assessorType ? escapeHtml(assessment.assessorType) : 'Assessor';
+
     const fileName = `${assessment.assessmentType}_Assessment_${assessment.projectName.replace(/\s+/g, '_')}.pdf`;
     
     const reportHtml = marked.parse(assessment.report, { gfm: true, breaks: true });
 
-    const assessorHtml = assessment.assessorName
-      ? `<p><strong>Prepared By:</strong> ${assessment.assessorName}<em>, ${assessment.assessorType || 'Assessor'}</em></p>`
+    const assessorHtml = safeAssessorName
+      ? `<p><strong>Prepared By:</strong> ${safeAssessorName}<em>, ${safeAssessorType}</em></p>`
       : `<p><strong>Prepared By:</strong> _________________________________________</p>`;
 
     const printContent = `
         <html>
         <head>
-            <title>${fileName}</title>
+            <title>${escapeHtml(fileName)}</title>
             <style>
                 body {
                     font-family: 'Inter', sans-serif;
@@ -72,15 +81,15 @@ export const exportToPdf = (assessment: Assessment) => {
         <body>
             <div class="page">
                 <header>
-                    <h1>${assessment.assessmentType} Impact Assessment</h1>
-                    <p>${assessment.projectName}</p>
+                    <h1>${safeAssessmentType} Impact Assessment</h1>
+                    <p>${safeProjectName}</p>
                 </header>
 
                 <div class="metadata">
-                    <p><strong>Project Name:</strong> ${assessment.projectName}</p>
-                    <p><strong>Project Proponent:</strong> ${assessment.projectProponent}</p>
-                    <p><strong>Location:</strong> ${assessment.location}</p>
-                    <p><strong>Project Type:</strong> ${assessment.projectType}</p>
+                    <p><strong>Project Name:</strong> ${safeProjectName}</p>
+                    <p><strong>Project Proponent:</strong> ${safeProponent}</p>
+                    <p><strong>Location:</strong> ${safeLocation}</p>
+                    <p><strong>Project Type:</strong> ${safeProjectType}</p>
                     <p><strong>Assessment Date:</strong> ${new Date(assessment.createdAt).toLocaleDateString()}</p>
                     ${assessorHtml}
                 </div>

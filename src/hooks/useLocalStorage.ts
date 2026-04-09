@@ -18,7 +18,11 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, Dispatch<S
       const valueToStore = JSON.stringify(storedValue);
       window.localStorage.setItem(key, valueToStore);
     } catch (error) {
-      console.error(error);
+      if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+        console.error('localStorage quota exceeded. Consider removing old data.');
+      } else {
+        console.error(error);
+      }
     }
   }, [key, storedValue]);
 

@@ -1,8 +1,13 @@
 {
-  "name": "Wajibika Mazingira ",
-  "description": "An AI-powered environmental impact assessment generator, anonymous community forum, and evidence locker for Kenya. Empowering communities to take charge of their environment.",
+  "name": "Wajibika Mazingira",
+  "description": "An AI-powered environmental impact assessment generator, anonymous community forum, and evidence locker for Kenya. Built on the Pi Network. Empowering communities to take charge of their environment.",
   "requestFramePermissions": [
     "microphone",
     "geolocation"
-  ]
+  ],
+  "pi_network": {
+    "app_id": "wajibika-mazingira",
+    "version": "2.0",
+    "sandbox": true
+  }
 }

@@ -7,6 +7,8 @@ import ReactMarkdown from 'react-markdown';
 import { MODELS, ASSESSMENT_EXPERT_INSTRUCTION, REPORT_SECTIONS } from '../config/ai';
 import { getSectionPrompt } from '../utils/promptBuilder';
 import { streamGeminiResponse } from '../services/geminiApiClient';
+import { usePiAuth } from '../contexts/PiAuthContext';
+import { PiPaymentButton } from './PiPaymentButton';
 
 const assessmentTypes: AssessmentType[] = ['Environmental', 'Social', 'Health', 'Climate', 'Cumulative'];
 
@@ -32,8 +34,10 @@ export const AssessmentGenerator: React.FC = () => {
   const [isEditing, setIsEditing] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const [useDeepAnalysis, setUseDeepAnalysis] = React.useState(false);
+  const [deepAnalysisUnlocked, setDeepAnalysisUnlocked] = React.useState(false);
   const [assessments, setAssessments] = useLocalStorage<Assessment[]>('assessments', []);
   const { addToast } = useToasts();
+  const { user, sdkAvailable } = usePiAuth();
   const reportContainerRef = React.useRef<HTMLDivElement | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -205,15 +209,30 @@ export const AssessmentGenerator: React.FC = () => {
                         <label htmlFor="deepAnalysis" className="font-medium text-slate-700">Deep Analysis</label>
                         <p className="text-xs text-slate-500">Uses a more powerful AI model for complex topics. Slower generation.</p>
                     </div>
-                    <button
-                        type="button"
-                        role="switch"
-                        aria-checked={useDeepAnalysis}
-                        onClick={() => setUseDeepAnalysis(!useDeepAnalysis)}
-                        className={`${useDeepAnalysis ? 'bg-brand-green-600' : 'bg-slate-200'} relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand-green-500 focus:ring-offset-2`}
-                    >
-                        <span className={`${useDeepAnalysis ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}/>
-                    </button>
+                    {(!sdkAvailable || deepAnalysisUnlocked || !user) ? (
+                      <button
+                          type="button"
+                          role="switch"
+                          aria-checked={useDeepAnalysis}
+                          onClick={() => setUseDeepAnalysis(!useDeepAnalysis)}
+                          className={`${useDeepAnalysis ? 'bg-brand-green-600' : 'bg-slate-200'} relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand-green-500 focus:ring-offset-2`}
+                      >
+                          <span className={`${useDeepAnalysis ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}/>
+                      </button>
+                    ) : (
+                      <PiPaymentButton
+                        amount={0.1}
+                        memo="Unlock Deep Analysis for one session"
+                        metadata={{ feature: 'deep_analysis' }}
+                        onPaymentSuccess={() => {
+                          setDeepAnalysisUnlocked(true);
+                          setUseDeepAnalysis(true);
+                        }}
+                        className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-yellow-500 text-yellow-900 hover:bg-yellow-400 transition-colors disabled:opacity-50"
+                      >
+                        Unlock (0.1 π)
+                      </PiPaymentButton>
+                    )}
                 </div>
             </div>
             <div className="p-4 bg-slate-50 border-t border-slate-200">
