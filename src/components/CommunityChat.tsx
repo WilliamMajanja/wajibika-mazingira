@@ -2,6 +2,7 @@ import * as React from 'react';
 import { Card } from './common/Card';
 import ReactMarkdown from 'react-markdown';
 import { useToasts } from '../hooks/useToasts';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 import { streamGeminiResponse, generateGeminiResponse, generateTextToSpeech } from '../services/geminiApiClient';
 import { playTtsAudio } from '../utils/audioUtils';
 import { MODELS, CHAT_DEFAULT_SYSTEM_INSTRUCTION } from '../config/ai';
@@ -12,7 +13,6 @@ interface Message {
     id: string;
     role: 'user' | 'model';
     text: string;
-    feedback?: 'up' | 'down';
     sources?: any[];
 }
 
@@ -31,6 +31,7 @@ export const CommunityChat: React.FC = () => {
     const [chatMode, setChatMode] = React.useState<ChatMode>('smart');
     const [userLocation, setUserLocation] = React.useState<{ latitude: number; longitude: number } | null>(null);
     const [recordingStatus, setRecordingStatus] = React.useState<'idle' | 'recording' | 'processing'>('idle');
+    const [feedbackMap, setFeedbackMap] = useLocalStorage<Record<string, 'up' | 'down'>>('chatFeedback', {});
     const mediaRecorderRef = React.useRef<MediaRecorder | null>(null);
     const audioChunksRef = React.useRef<Blob[]>([]);
     const { addToast } = useToasts();
@@ -200,7 +201,7 @@ export const CommunityChat: React.FC = () => {
     };
 
     const handleFeedback = (messageId: string, feedback: 'up' | 'down') => {
-        setMessages(prev => prev.map(msg => msg.id === messageId ? { ...msg, feedback } : msg));
+        setFeedbackMap(prev => ({ ...prev, [messageId]: feedback }));
         addToast({ type: 'info', message: 'Thank you for your feedback!' });
     };
 
@@ -256,8 +257,8 @@ export const CommunityChat: React.FC = () => {
                         {msg.role === 'model' && msg.text && index > 0 && (!isLoading || index < messages.length - 1) && (
                             <div className="mt-2 flex items-center gap-1">
                                 <button onClick={() => handlePlayTTS(msg.text)} aria-label="Read aloud" className="p-1 rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600"><SpeakerIcon className="h-4 w-4" /></button>
-                                <button onClick={() => handleFeedback(msg.id, 'up')} disabled={!!msg.feedback} aria-label="Helpful" className={`p-1 rounded-full transition-colors ${msg.feedback === 'up' ? 'bg-green-100 text-green-600' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600 disabled:text-slate-300'}`}><ThumbsUpIcon /></button>
-                                <button onClick={() => handleFeedback(msg.id, 'down')} disabled={!!msg.feedback} aria-label="Not helpful" className={`p-1 rounded-full transition-colors ${msg.feedback === 'down' ? 'bg-red-100 text-red-600' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600 disabled:text-slate-300'}`}><ThumbsDownIcon /></button>
+                                <button onClick={() => handleFeedback(msg.id, 'up')} disabled={!!feedbackMap[msg.id]} aria-label="Helpful" className={`p-1 rounded-full transition-colors ${feedbackMap[msg.id] === 'up' ? 'bg-green-100 text-green-600' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600 disabled:text-slate-300'}`}><ThumbsUpIcon /></button>
+                                <button onClick={() => handleFeedback(msg.id, 'down')} disabled={!!feedbackMap[msg.id]} aria-label="Not helpful" className={`p-1 rounded-full transition-colors ${feedbackMap[msg.id] === 'down' ? 'bg-red-100 text-red-600' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600 disabled:text-slate-300'}`}><ThumbsDownIcon /></button>
                             </div>
                         )}
                     </div>

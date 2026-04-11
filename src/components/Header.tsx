@@ -1,6 +1,7 @@
 
 import * as React from 'react';
 import type { Page } from '../types';
+import { usePiAuth } from '../contexts/PiAuthContext';
 
 interface HeaderProps {
   activePage: Page;
@@ -51,7 +52,13 @@ const LogoIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
+const PiUserIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+);
+
 export const Header: React.FC<HeaderProps> = ({ activePage, setActivePage }) => {
+  const { user, sdkAvailable, isAuthenticating, login, logout } = usePiAuth();
+
   return (
     <header className="bg-brand-green-900 shadow-lg sticky top-0 z-50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -63,11 +70,36 @@ export const Header: React.FC<HeaderProps> = ({ activePage, setActivePage }) => 
               <p className="text-xs text-brand-green-300 hidden sm:block">minima PiNet OS · by William Majanja</p>
             </div>
           </div>
-          <nav className="flex space-x-2 bg-brand-green-950/50 p-2 rounded-xl">
-            <NavItem label="Impact Assessment" page="assessment" activePage={activePage} onClick={setActivePage} Icon={ClipboardIcon}/>
-            <NavItem label="Community Chat" page="chat" activePage={activePage} onClick={setActivePage} Icon={ChatBubbleIcon} />
-            <NavItem label="Evidence Locker" page="locker" activePage={activePage} onClick={setActivePage} Icon={LockerIcon} />
-          </nav>
+          <div className="flex items-center gap-4">
+            <nav className="flex space-x-2 bg-brand-green-950/50 p-2 rounded-xl">
+              <NavItem label="Impact Assessment" page="assessment" activePage={activePage} onClick={setActivePage} Icon={ClipboardIcon}/>
+              <NavItem label="Community Chat" page="chat" activePage={activePage} onClick={setActivePage} Icon={ChatBubbleIcon} />
+              <NavItem label="Evidence Locker" page="locker" activePage={activePage} onClick={setActivePage} Icon={LockerIcon} />
+            </nav>
+            {sdkAvailable && (
+              user ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-brand-green-200 hidden sm:inline">@{user.username}</span>
+                  <button
+                    onClick={logout}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-brand-green-700 text-white hover:bg-brand-green-600 transition-colors"
+                  >
+                    <PiUserIcon className="h-4 w-4" />
+                    <span className="hidden sm:inline">Sign Out</span>
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={login}
+                  disabled={isAuthenticating}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-yellow-500 text-yellow-900 hover:bg-yellow-400 transition-colors disabled:opacity-50"
+                >
+                  <PiUserIcon className="h-4 w-4" />
+                  {isAuthenticating ? 'Connecting…' : 'Sign in with Pi'}
+                </button>
+              )
+            )}
+          </div>
         </div>
       </div>
     </header>

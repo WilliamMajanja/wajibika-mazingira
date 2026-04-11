@@ -15,7 +15,7 @@ const streamTextResponse = async (stream: AsyncGenerator<GenerateContentResponse
 };
 
 // Main handler
-export default async (req: Request, context: Context) => {
+export default async (req: Request, _context: Context) => {
     if (!API_KEY) {
         return new Response(JSON.stringify({ error: "API key not configured" }), { status: 500, headers: { 'Content-Type': 'application/json' } });
     }

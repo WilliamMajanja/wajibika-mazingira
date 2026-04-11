@@ -7,6 +7,7 @@ import { EvidenceLocker } from './components/EvidenceLocker';
 import { Page } from './types';
 import { ToastsProvider } from './hooks/useToasts';
 import { ToastContainer } from './components/common/Toast';
+import { PiAuthProvider } from './contexts/PiAuthContext';
 
 function App() {
   const [activePage, setActivePage] = React.useState<Page>('assessment');
@@ -25,15 +26,17 @@ function App() {
   };
 
   return (
-    <ToastsProvider>
-        <div className="bg-slate-100 min-h-screen font-sans text-slate-800 flex flex-col h-screen">
-          <Header activePage={activePage} setActivePage={setActivePage} />
-          <main className="container mx-auto p-4 sm:p-6 lg:p-8 flex-grow overflow-y-auto">
-              {renderPage()}
-          </main>
-          <ToastContainer />
-        </div>
-    </ToastsProvider>
+    <PiAuthProvider>
+      <ToastsProvider>
+          <div className="bg-slate-100 min-h-screen font-sans text-slate-800 flex flex-col h-screen">
+            <Header activePage={activePage} setActivePage={setActivePage} />
+            <main className="container mx-auto p-4 sm:p-6 lg:p-8 flex-grow overflow-y-auto">
+                {renderPage()}
+            </main>
+            <ToastContainer />
+          </div>
+      </ToastsProvider>
+    </PiAuthProvider>
   );
 }
 

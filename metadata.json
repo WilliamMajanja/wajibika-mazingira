@@ -6,5 +6,10 @@
   "requestFramePermissions": [
     "microphone",
     "geolocation"
-  ]
+  ],
+  "pi_network": {
+    "app_id": "wajibika-mazingira",
+    "version": "2.0",
+    "sandbox": true
+  }
 }

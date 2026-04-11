@@ -7,6 +7,9 @@ import { exportToPdf } from '../services/pdfService';
 import { useToasts } from '../hooks/useToasts';
 import { streamGeminiResponse } from '../services/geminiApiClient';
 import { MODELS } from '../config/ai';
+import { MAX_IMAGE_SIZE_BYTES, MAX_IMAGE_SIZE_LABEL } from '../utils/sanitize';
+import { usePiAuth } from '../contexts/PiAuthContext';
+import { PiPaymentButton } from './PiPaymentButton';
 
 const EditIcon = (props: React.SVGProps<SVGSVGElement>) => (<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" /></svg>);
 
@@ -15,7 +18,9 @@ export const EvidenceLocker: React.FC = () => {
   const [selectedAssessment, setSelectedAssessment] = React.useState<Assessment | null>(assessments[0] || null);
   const [isEditing, setIsEditing] = React.useState(false);
   const [editedReport, setEditedReport] = React.useState('');
+  const [pdfExportUnlocked, setPdfExportUnlocked] = React.useState(false);
   const { addToast } = useToasts();
+  const { user, sdkAvailable } = usePiAuth();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   
   React.useEffect(() => {
@@ -32,6 +37,11 @@ export const EvidenceLocker: React.FC = () => {
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && selectedAssessment) {
+      if (file.size > MAX_IMAGE_SIZE_BYTES) {
+        addToast({ type: 'error', message: `File too large. Maximum size is ${MAX_IMAGE_SIZE_LABEL}.` });
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        return;
+      }
       const reader = new FileReader();
       reader.onload = (e) => {
         const newEvidence: Evidence = {
@@ -165,7 +175,22 @@ export const EvidenceLocker: React.FC = () => {
                 {selectedAssessment && (
                     <div className="flex items-center space-x-4 flex-shrink-0 self-end sm:self-auto">
                         <button onClick={handleToggleEdit} className="flex items-center gap-1.5 text-sm font-medium text-brand-green-600 hover:text-brand-green-800"><EditIcon className="h-4 w-4" />{isEditing ? 'Save Changes' : 'Edit'}</button>
-                        <button onClick={() => handleExport(selectedAssessment)} className="text-sm font-medium text-brand-green-600 hover:text-brand-green-800">Export as PDF</button>
+                        {(!sdkAvailable || pdfExportUnlocked || !user) ? (
+                          <button onClick={() => handleExport(selectedAssessment)} className="text-sm font-medium text-brand-green-600 hover:text-brand-green-800">Export as PDF</button>
+                        ) : (
+                          <PiPaymentButton
+                            amount={0.05}
+                            memo="Unlock PDF export for this session"
+                            metadata={{ feature: 'pdf_export' }}
+                            onPaymentSuccess={() => {
+                              setPdfExportUnlocked(true);
+                              handleExport(selectedAssessment);
+                            }}
+                            className="text-sm font-medium text-yellow-700 hover:text-yellow-900"
+                          >
+                            Export PDF (0.05 π)
+                          </PiPaymentButton>
+                        )}
                         <button onClick={() => handleDelete(selectedAssessment.id)} className="text-sm font-medium text-red-500 hover:text-red-700">Delete</button>
                     </div>
                 )}
