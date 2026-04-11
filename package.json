@@ -3,6 +3,8 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "author": "William Majanja",
+  "description": "An AI-powered environmental impact assessment platform. A minima PiNet OS project.",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
