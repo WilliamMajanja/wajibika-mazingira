@@ -5,7 +5,7 @@ import { Card } from './common/Card';
 import ReactMarkdown from 'react-markdown';
 import { exportToPdf } from '../services/pdfService';
 import { useToasts } from '../hooks/useToasts';
-import { streamGeminiResponse } from '../services/geminiApiClient';
+import { streamAIResponse } from '../services/aiClient';
 import { MODELS } from '../config/ai';
 import { MAX_IMAGE_SIZE_BYTES, MAX_IMAGE_SIZE_LABEL } from '../utils/sanitize';
 import { usePiAuth } from '../contexts/PiAuthContext';
@@ -79,7 +79,7 @@ export const EvidenceLocker: React.FC = () => {
          const mimeType = evidenceToAnalyze.data.split(';')[0].split(':')[1];
          const prompt = `Analyze this image in the context of a potential environmental or social impact assessment in Kenya. Describe what you see and identify any potential points of concern. Be objective and descriptive.`;
          
-         const stream = await streamGeminiResponse('analyzeImage', {
+         const stream = await streamAIResponse('analyzeImage', {
              prompt,
              image: base64Data,
              mimeType,

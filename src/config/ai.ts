@@ -4,13 +4,13 @@
 
 export const MODELS = {
     // Fast, for low-latency chat
-    flash_lite: 'gemini-2.5-flash-lite',
+    flash_lite: 'gpt-4o-mini',
     // Standard, balanced model for chat and analysis
-    flash: 'gemini-2.5-flash',
+    flash: 'gpt-4o',
     // Advanced, for complex reasoning and deep analysis
-    pro: 'gemini-2.5-pro',
-    // Text-to-Speech
-    tts: 'gemini-2.5-flash-preview-tts',
+    pro: 'gpt-4o',
+    // Text-to-Speech – handled by the browser SpeechSynthesis API
+    tts: 'browser-speechsynthesis',
 };
 
 

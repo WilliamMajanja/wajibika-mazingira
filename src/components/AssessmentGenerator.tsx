@@ -6,7 +6,7 @@ import { Card } from './common/Card';
 import ReactMarkdown from 'react-markdown';
 import { MODELS, ASSESSMENT_EXPERT_INSTRUCTION, REPORT_SECTIONS } from '../config/ai';
 import { getSectionPrompt } from '../utils/promptBuilder';
-import { streamGeminiResponse } from '../services/geminiApiClient';
+import { streamAIResponse } from '../services/aiClient';
 import { usePiAuth } from '../contexts/PiAuthContext';
 import { PiPaymentButton } from './PiPaymentButton';
 
@@ -75,7 +75,7 @@ export const AssessmentGenerator: React.FC = () => {
       for (const section of REPORT_SECTIONS) {
           const sectionPrompt = getSectionPrompt(formData, section);
           
-          const sectionStream = await streamGeminiResponse(task, {
+          const sectionStream = await streamAIResponse(task, {
               messages: [{ role: 'user', text: sectionPrompt }],
               systemInstruction: ASSESSMENT_EXPERT_INSTRUCTION,
               model,

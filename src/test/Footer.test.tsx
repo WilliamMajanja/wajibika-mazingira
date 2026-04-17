@@ -26,7 +26,7 @@ describe('Footer', () => {
 
   it('displays the technology and storage note', () => {
     render(<Footer />);
-    expect(screen.getByText(/Powered by Google Gemini/)).toBeInTheDocument();
+    expect(screen.getByText(/Powered by GitHub Copilot/)).toBeInTheDocument();
     expect(screen.getByText(/All data stored locally/)).toBeInTheDocument();
   });
 });
