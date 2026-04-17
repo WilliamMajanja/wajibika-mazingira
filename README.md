@@ -14,10 +14,10 @@
   <img alt="Technology" src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white">
   <img alt="Technology" src="https://img.shields.io/badge/Google_Gemini-8E75B2?style=for-the-badge&logo=google&logoColor=white">
   <img alt="Technology" src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white">
-  <img alt="Technology" src="https://img.shields.io/badge/Netlify-00C7B7?style=for-the-badge&logo=netlify&logoColor=white">
+  <img alt="Technology" src="https://img.shields.io/badge/GitHub_Pages-222222?style=for-the-badge&logo=github&logoColor=white">
 </p>
 
-**Wajibika Mazingira** (Swahili for "Be Responsible for the Environment") is a powerful, serverless web application designed to democratize environmental and social impact assessments in Kenya. Built as part of the **minima PiNet OS** ecosystem by **William Majanja**, it leverages the Google Gemini API to provide communities with instant, detailed reports, a secure evidence locker with AI-powered analysis, and an advanced, multi-modal community assistant.
+**Wajibika Mazingira** (Swahili for "Be Responsible for the Environment") is a powerful web application designed to democratize environmental and social impact assessments in Kenya. Built as part of the **minima PiNet OS** ecosystem by **William Majanja**, it leverages the Google Gemini API to provide communities with instant, detailed reports, a secure evidence locker with AI-powered analysis, and an advanced, multi-modal community assistant.
 
 > **Note:** This project is **not** affiliated with or related to Pi Network (the cryptocurrency). It is an independent project under the minima PiNet OS initiative by William Majanja.
 
@@ -53,7 +53,7 @@ Engage with "Mazingira Rafiki," an AI assistant with new capabilities:
 
 ## 🚀 Core Capabilities
 
--   **Multi-Modal AI Backend**: Uses a versatile Netlify Function to securely handle requests for text generation, image analysis, audio transcription, and text-to-speech with various Gemini models.
+-   **Client-Side AI Integration**: Calls the Google Gemini API directly from the browser for text generation, image analysis, audio transcription, and text-to-speech.
 -   **Dynamic AI Assessment Generation**: Create detailed reports with standard or deep-analysis modes.
 -   **Visual Evidence Analysis**: Upload and analyze images for environmental context.
 -   **Multi-Mode Chat**: Switch between fast, smart, search-grounded, and map-grounded conversation modes.
@@ -68,27 +68,23 @@ Engage with "Mazingira Rafiki," an AI assistant with new capabilities:
 -   **Frontend**: React, TypeScript, Vite
 -   **Styling**: Tailwind CSS
 -   **AI Models**: Google Gemini API (`gemini-2.5-pro`, `gemini-2.5-flash`, `gemini-2.5-flash-lite`, `gemini-2.5-flash-preview-tts`)
--   **Backend**: Serverless via Netlify Functions
 -   **Client-side Storage**: `useLocalStorage` custom hook
--   **Deployment**: Netlify
+-   **Deployment**: GitHub Pages
 
 ---
 
 ## ⚙️ Getting Started
 
-This project is now configured with a standard build process.
-
 ### Prerequisites
 
 -   Node.js and npm
 -   A valid **Google Gemini API Key**. You can get one from [Google AI Studio](https://aistudio.google.com/app/apikey).
--   [Netlify CLI](https://docs.netlify.com/cli/get-started/) (for local development)
 
 ### Running Locally
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/your-username/wajibika-mazingira.git
+    git clone https://github.com/WilliamMajanja/wajibika-mazingira.git
     cd wajibika-mazingira
     ```
 2.  **Install dependencies:**
@@ -96,28 +92,27 @@ This project is now configured with a standard build process.
     npm install
     ```
 3.  **Set up the API Key:**
-    The application requires the `API_KEY` to be available as an environment variable. For local development with the Netlify CLI, create a `.env` file in the root of the project:
+    Create a `.env` file in the root of the project:
     ```
-    # .env
-    API_KEY="Your-Gemini-API-Key-Here"
+    VITE_GEMINI_API_KEY=Your-Gemini-API-Key-Here
     ```
 4.  **Run the development server:**
-    Use the Netlify CLI to run the Vite dev server and the serverless functions together.
     ```bash
-    ntl dev
+    npm run dev
     ```
-5.  Open your browser and navigate to the local address provided by the CLI (e.g., `http://localhost:8888`).
+5.  Open your browser and navigate to the local address provided (e.g., `http://localhost:5173`).
 
 ---
 
-## ☁️ Deployment to Netlify
+## ☁️ Deployment to GitHub Pages
 
-1.  Push your repository to GitHub, GitLab, or Bitbucket.
-2.  Connect your Git provider to Netlify.
-3.  Select the repository. The `netlify.toml` file in the project will automatically configure the build command (`npm run build`) and the publish directory (`dist`).
-4.  Add your Gemini API key as an environment variable in the Netlify site settings:
-    -   Go to **Site configuration > Environment variables**.
-    -   Add a new variable:
-        -   **Key**: `API_KEY`
+This project is configured for automatic deployment via GitHub Actions.
+
+1.  Push your repository to GitHub.
+2.  Go to **Settings > Pages** and set the source to **GitHub Actions**.
+3.  Add your Gemini API key as a repository secret:
+    -   Go to **Settings > Secrets and variables > Actions**.
+    -   Add a new repository secret:
+        -   **Name**: `VITE_GEMINI_API_KEY`
         -   **Value**: `Your-Gemini-API-Key-Here`
-5.  Trigger a deploy. Your site will be live!
+4.  Push to the `main` branch (or trigger the workflow manually). Your site will be live at `https://<username>.github.io/wajibika-mazingira/`.

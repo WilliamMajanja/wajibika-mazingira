@@ -71,8 +71,14 @@ export const createPayment = (
 
   const paymentData: PiPaymentData = { amount, memo, metadata };
 
+  const PI_PAYMENT_ENDPOINT = import.meta.env.VITE_PI_PAYMENT_ENDPOINT as string | undefined;
+
   const approvePaymentOnServer = async (paymentId: PaymentId): Promise<void> => {
-    const res = await fetch('/api/pi-payment', {
+    if (!PI_PAYMENT_ENDPOINT) {
+      console.warn('Pi payment server endpoint not configured (VITE_PI_PAYMENT_ENDPOINT). Payment approval skipped.');
+      return;
+    }
+    const res = await fetch(PI_PAYMENT_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'approve', paymentId }),
@@ -81,7 +87,11 @@ export const createPayment = (
   };
 
   const completePaymentOnServer = async (paymentId: PaymentId, txId: TxId): Promise<void> => {
-    const res = await fetch('/api/pi-payment', {
+    if (!PI_PAYMENT_ENDPOINT) {
+      console.warn('Pi payment server endpoint not configured (VITE_PI_PAYMENT_ENDPOINT). Payment completion skipped.');
+      return;
+    }
+    const res = await fetch(PI_PAYMENT_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'complete', paymentId, txId }),

@@ -40,10 +40,11 @@ export const PiAuthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, [sdkAvailable]);
 
   const handleIncompletePayment = React.useCallback(async (payment: PiIncompletePayment) => {
-    // Attempt to complete the payment server-side
+    // Attempt to complete the payment server-side if an endpoint is configured
+    const piPaymentEndpoint = import.meta.env.VITE_PI_PAYMENT_ENDPOINT as string | undefined;
     try {
-      if (payment.transaction?.txid) {
-        await fetch('/api/pi-payment', {
+      if (payment.transaction?.txid && piPaymentEndpoint) {
+        await fetch(piPaymentEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -52,6 +53,8 @@ export const PiAuthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             txId: payment.transaction.txid,
           }),
         });
+      } else if (!piPaymentEndpoint) {
+        console.warn('Pi payment server endpoint not configured. Cannot complete pending payment:', payment.identifier);
       }
     } catch (err) {
       console.error('Failed to complete pending payment:', err);
