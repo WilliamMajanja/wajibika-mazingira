@@ -116,3 +116,5 @@ This project is configured for automatic deployment via GitHub Actions.
         -   **Name**: `VITE_GEMINI_API_KEY`
         -   **Value**: `Your-Gemini-API-Key-Here`
 4.  Push to the `main` branch (or trigger the workflow manually). Your site will be live at `https://<username>.github.io/wajibika-mazingira/`.
+
+> **Security Note:** Because GitHub Pages is a static host, the Gemini API key is embedded in the built JavaScript bundle. To protect your key, apply **HTTP referrer restrictions** in the [Google Cloud Console](https://console.cloud.google.com/apis/credentials) so it can only be used from your GitHub Pages domain.

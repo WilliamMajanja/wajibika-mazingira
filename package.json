@@ -7,7 +7,7 @@
   "description": "An AI-powered environmental impact assessment platform. A minima PiNet OS project.",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && cp dist/index.html dist/404.html",
+    "build": "vite build && node -e \"require('fs').copyFileSync('dist/index.html','dist/404.html')\"",
     "preview": "vite preview"
   },
   "dependencies": {
