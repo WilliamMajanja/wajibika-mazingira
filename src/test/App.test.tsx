@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // Mock the modules that App.tsx imports (using relative paths from App.tsx location)
-vi.mock('../../App', async () => {
+vi.mock('../App', async () => {
   // Instead of importing the real App (which has unresolvable imports),
   // we create a test-friendly version that exercises the same logic.
   const React = await import('react');
@@ -46,7 +46,7 @@ vi.mock('../../App', async () => {
   return { default: App };
 });
 
-import App from '../../App';
+import App from '../App';
 
 describe('App', () => {
   it('renders without crashing', () => {
