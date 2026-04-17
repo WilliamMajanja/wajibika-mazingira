@@ -28,6 +28,14 @@ describe('aiClient', () => {
       await expect(reader.read()).rejects.toThrow('Unsupported streaming task');
     });
 
+    it('throws for transcribeAudio task (no longer supported)', async () => {
+      vi.stubEnv('VITE_GITHUB_TOKEN', 'test-token');
+      const { streamAIResponse } = await import('../services/aiClient');
+      const stream = await streamAIResponse('transcribeAudio', {});
+      const reader = stream.getReader();
+      await expect(reader.read()).rejects.toThrow('Unsupported streaming task');
+    });
+
     it('returns a ReadableStream for chat task', async () => {
       vi.stubEnv('VITE_GITHUB_TOKEN', 'test-token');
 

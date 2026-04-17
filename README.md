@@ -54,7 +54,8 @@ Engage with "Mazingira Rafiki," an AI assistant with new capabilities:
 ## 🚀 Core Capabilities
 
 -   **Client-Side AI Integration**: Calls the GitHub Models API (OpenAI-compatible) directly from the browser for text generation, image analysis, and chat.
--   **Browser-Native Speech**: Uses the Web Speech API for voice-to-text input and text-to-speech output — no API key needed for speech features.-   **Dynamic AI Assessment Generation**: Create detailed reports with standard or deep-analysis modes.
+-   **Browser-Native Speech**: Uses the Web Speech API for voice-to-text input and text-to-speech output — no API key needed for speech features.
+-   **Dynamic AI Assessment Generation**: Create detailed reports with standard or deep-analysis modes.
 -   **Visual Evidence Analysis**: Upload and analyze images for environmental context.
 -   **Multi-Mode Chat**: Switch between fast, smart, search-grounded, and map-grounded conversation modes.
 -   **Accessible Communication**: Use voice-to-text for input and text-to-speech for output.
