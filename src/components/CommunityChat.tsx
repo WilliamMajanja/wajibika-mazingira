@@ -279,7 +279,7 @@ export const CommunityChat: React.FC = () => {
             <div className="p-4 border-t border-slate-200 bg-white space-y-3">
                 <ChatModeSelector />
                 <div className="flex items-center space-x-2">
-                    <input type="text" value={currentMessage} onChange={(e) => setCurrentMessage(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()} placeholder="Ask a question or share a concern..." className="flex-1 px-4 py-2 bg-white border border-slate-300 rounded-full focus:outline-none focus:ring-2 focus:ring-brand-green-500 disabled:bg-slate-100" disabled={isLoading || recordingStatus !== 'idle'}/>
+                    <input type="text" value={currentMessage} onChange={(e) => setCurrentMessage(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()} placeholder="Ask a question or share a concern..." className="flex-1 px-4 py-2 bg-white border border-slate-300 rounded-full focus:outline-none focus:ring-2 focus:ring-brand-green-500 disabled:bg-slate-100" disabled={isLoading || recordingStatus !== 'idle'}/>
                     <button onClick={handleToggleRecording} disabled={isLoading} className={`p-2 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-green-500 disabled:bg-slate-400 disabled:cursor-not-allowed ${recordingStatus === 'recording' ? 'bg-red-500 text-white animate-pulse' : 'bg-slate-600 text-white hover:bg-slate-700'}`}>
                         <MicIcon className="h-6 w-6" />
                     </button>
