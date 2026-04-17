@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ErrorBoundary } from '../components/common/ErrorBoundary';
@@ -7,9 +7,9 @@ import { ErrorBoundary } from '../components/common/ErrorBoundary';
 const originalConsoleError = console.error;
 beforeEach(() => {
   console.error = vi.fn();
-  return () => {
-    console.error = originalConsoleError;
-  };
+});
+afterEach(() => {
+  console.error = originalConsoleError;
 });
 
 const ThrowingComponent = () => {
@@ -47,7 +47,7 @@ describe('ErrorBoundary', () => {
       return <div>Recovered content</div>;
     };
 
-    const { rerender } = render(
+    render(
       <ErrorBoundary>
         <ConditionalThrower />
       </ErrorBoundary>
@@ -58,15 +58,7 @@ describe('ErrorBoundary', () => {
     shouldThrow = false;
     await user.click(screen.getByText('Try Again'));
 
-    rerender(
-      <ErrorBoundary>
-        <ConditionalThrower />
-      </ErrorBoundary>
-    );
-
-    // After reset, boundary should attempt to re-render children
-    // Since shouldThrow is false, it should show recovered content or re-throw
-    // The boundary resets its state so children re-render
+    expect(screen.getByText('Recovered content')).toBeInTheDocument();
   });
 
   it('provides a "Reload Page" button', () => {
