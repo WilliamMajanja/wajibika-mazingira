@@ -3,8 +3,7 @@ import { Card } from './common/Card';
 import ReactMarkdown from 'react-markdown';
 import { useToasts } from '../hooks/useToasts';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-import { streamGeminiResponse, generateGeminiResponse, generateTextToSpeech } from '../services/geminiApiClient';
-import { playTtsAudio } from '../utils/audioUtils';
+import { streamAIResponse, generateAIResponse, speakText } from '../services/aiClient';
 import { MODELS, CHAT_DEFAULT_SYSTEM_INSTRUCTION } from '../config/ai';
 
 type ChatMode = 'fast' | 'smart' | 'grounded' | 'maps';
@@ -32,8 +31,7 @@ export const CommunityChat: React.FC = () => {
     const [userLocation, setUserLocation] = React.useState<{ latitude: number; longitude: number } | null>(null);
     const [recordingStatus, setRecordingStatus] = React.useState<'idle' | 'recording' | 'processing'>('idle');
     const [feedbackMap, setFeedbackMap] = useLocalStorage<Record<string, 'up' | 'down'>>('chatFeedback', {});
-    const mediaRecorderRef = React.useRef<MediaRecorder | null>(null);
-    const audioChunksRef = React.useRef<Blob[]>([]);
+    const recognitionRef = React.useRef<any>(null);
     const { addToast } = useToasts();
     const messagesEndRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -89,7 +87,7 @@ export const CommunityChat: React.FC = () => {
                 const modelMessageId = `model-${Date.now()}`;
                 setMessages(prev => [...prev, { id: modelMessageId, role: 'model', text: '' }]);
 
-                const stream = await streamGeminiResponse(modelConfig.task, {
+                const stream = await streamAIResponse(modelConfig.task, {
                     messages: [...historyForApi, { role: userMessage.role, text: userMessage.text }],
                     model: modelConfig.model,
                     systemInstruction: CHAT_DEFAULT_SYSTEM_INSTRUCTION
@@ -109,7 +107,7 @@ export const CommunityChat: React.FC = () => {
                     });
                 }
             } else { // Non-streaming for grounded search/maps
-                const result = await generateGeminiResponse(modelConfig.task, {
+                const result = await generateAIResponse(modelConfig.task, {
                     messages: [...historyForApi, { role: userMessage.role, text: userMessage.text }],
                     model: modelConfig.model,
                     systemInstruction: CHAT_DEFAULT_SYSTEM_INSTRUCTION,
@@ -133,70 +131,48 @@ export const CommunityChat: React.FC = () => {
         }
     };
 
-    const handleToggleRecording = async () => {
+    const handleToggleRecording = () => {
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            addToast({ type: 'error', message: 'Speech recognition is not supported in this browser.' });
+            return;
+        }
+
         if (recordingStatus === 'recording') {
-            mediaRecorderRef.current?.stop();
-            setRecordingStatus('processing');
+            recognitionRef.current?.stop();
+            setRecordingStatus('idle');
         } else {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorderRef.current = new MediaRecorder(stream);
-                audioChunksRef.current = [];
-                mediaRecorderRef.current.ondataavailable = (event) => {
-                    audioChunksRef.current.push(event.data);
-                };
-                mediaRecorderRef.current.onstop = async () => {
-                    const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-                    const reader = new FileReader();
-                    reader.readAsDataURL(audioBlob);
-                    reader.onloadend = async () => {
-                        const base64Audio = (reader.result as string).split(',')[1];
-                        try {
-                            const responseStream = await streamGeminiResponse('transcribeAudio', {
-                                audio: base64Audio,
-                                mimeType: 'audio/webm',
-                                model: MODELS.flash
-                            });
-                            const streamReader = responseStream.getReader();
-                            const decoder = new TextDecoder();
-                            let transcription = '';
-                            while (true) {
-                                const { done, value } = await streamReader.read();
-                                if (done) break;
-                                transcription += decoder.decode(value, { stream: true });
-                            }
-                            setCurrentMessage(transcription.trim());
-                        } catch (e) {
-                            addToast({ type: 'error', message: 'Failed to transcribe audio.' });
-                        } finally {
-                            setRecordingStatus('idle');
-                        }
-                    };
-                    // Clean up stream tracks
-                    stream.getTracks().forEach(track => track.stop());
-                };
-                mediaRecorderRef.current.start();
-                setRecordingStatus('recording');
-            } catch (error) {
-                addToast({ type: 'error', message: 'Microphone access denied or not available.' });
-                console.error("Microphone error:", error);
-            }
+            const recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+
+            recognition.onresult = (event: any) => {
+                const transcript = event.results[0][0].transcript;
+                setCurrentMessage(prev => prev ? `${prev} ${transcript}` : transcript);
+                setRecordingStatus('idle');
+            };
+            recognition.onerror = () => {
+                addToast({ type: 'error', message: 'Speech recognition failed. Please try again.' });
+                setRecordingStatus('idle');
+            };
+            recognition.onend = () => {
+                setRecordingStatus('idle');
+            };
+
+            recognitionRef.current = recognition;
+            recognition.start();
+            setRecordingStatus('recording');
         }
     };
     
-    const handlePlayTTS = async (text: string) => {
+    const handlePlayTTS = (text: string) => {
         if (!text) return;
-        addToast({ type: 'info', message: 'Generating audio...' });
         try {
-            const { audioContent } = await generateTextToSpeech(text);
-            if (audioContent) {
-                playTtsAudio(audioContent);
-            } else {
-                 addToast({ type: 'error', message: 'Failed to generate audio.' });
-            }
+            speakText(text);
         } catch (error) {
-             const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
-             addToast({ type: 'error', message: `TTS Error: ${errorMessage}` });
+            const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+            addToast({ type: 'error', message: `TTS Error: ${errorMessage}` });
         }
     };
 

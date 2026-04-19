@@ -18,7 +18,7 @@ export const Footer: React.FC = () => {
           </a>
         </p>
         <p className="text-xs text-slate-400">
-          Powered by Google Gemini &middot; All data stored locally in your browser
+          Powered by GitHub Copilot &middot; All data stored locally in your browser
         </p>
       </div>
     </footer>
