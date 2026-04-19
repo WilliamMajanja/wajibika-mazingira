@@ -1,40 +1,36 @@
 // src/services/aiClient.ts
-// Calls the GitHub Models API (OpenAI-compatible) directly from the browser.
-// The token is read from the VITE_GITHUB_TOKEN environment variable at build time.
+// Calls the Google Gemini API directly from the browser via the @google/genai SDK.
+// The API key is read from the VITE_GEMINI_API_KEY environment variable at build time.
 
-const API_BASE = "https://models.inference.ai.github.com";
-const API_KEY = import.meta.env.VITE_GITHUB_TOKEN as string | undefined;
+import { GoogleGenAI, type Content, type Part } from "@google/genai";
 
-const getApiKey = (): string => {
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
+
+let _client: GoogleGenAI | null = null;
+
+const getClient = (): GoogleGenAI => {
     if (!API_KEY) {
         throw new Error(
-            "GitHub token is not configured. Set the VITE_GITHUB_TOKEN environment variable."
+            "Gemini API key is not configured. Set the VITE_GEMINI_API_KEY environment variable."
         );
     }
-    return API_KEY;
+    if (!_client) {
+        _client = new GoogleGenAI({ apiKey: API_KEY });
+    }
+    return _client;
 };
 
 // ---------------------------------------------------------------------------
-// Internal helper – builds an OpenAI-compatible request body.
+// Internal helper – converts the app's message format to Gemini Content[].
 // ---------------------------------------------------------------------------
 
-interface ChatMessage {
-    role: string;
-    content: string | Array<{ type: string; text?: string; image_url?: { url: string } }>;
-}
-
-const buildMessages = (
-    systemInstruction: string | undefined,
+const buildContents = (
     messages: { role: string; text: string }[],
-): ChatMessage[] => {
-    const out: ChatMessage[] = [];
-    if (systemInstruction) {
-        out.push({ role: "system", content: systemInstruction });
-    }
-    for (const msg of messages) {
-        out.push({ role: msg.role === "model" ? "assistant" : msg.role, content: msg.text });
-    }
-    return out;
+): Content[] => {
+    return messages.map((msg) => ({
+        role: msg.role === "assistant" ? "model" : msg.role,
+        parts: [{ text: msg.text }],
+    }));
 };
 
 // ---------------------------------------------------------------------------
@@ -46,91 +42,59 @@ export const streamAIResponse = async (
     task: string,
     payload: Record<string, any>,
 ): Promise<ReadableStream<Uint8Array>> => {
-    const apiKey = getApiKey();
+    const client = getClient();
     const encoder = new TextEncoder();
 
     const readableStream = new ReadableStream<Uint8Array>({
         async start(controller) {
             try {
-                let body: Record<string, any>;
-
                 switch (task) {
                     case "chat":
                     case "complexGeneration": {
                         const { messages, model, systemInstruction } = payload;
-                        body = {
+                        const contents = buildContents(messages);
+
+                        const stream = await client.models.generateContentStream({
                             model,
-                            messages: buildMessages(systemInstruction, messages),
-                            stream: true,
-                        };
+                            contents,
+                            config: systemInstruction
+                                ? { systemInstruction }
+                                : undefined,
+                        });
+
+                        for await (const chunk of stream) {
+                            const text = chunk.text;
+                            if (text) {
+                                controller.enqueue(encoder.encode(text));
+                            }
+                        }
+                        controller.close();
                         break;
                     }
                     case "analyzeImage": {
                         const { prompt, image, mimeType, model } = payload;
-                        const dataUri = `data:${mimeType};base64,${image}`;
-                        body = {
+                        const parts: Part[] = [
+                            { text: prompt },
+                            { inlineData: { data: image, mimeType } },
+                        ];
+
+                        const stream = await client.models.generateContentStream({
                             model,
-                            messages: [
-                                {
-                                    role: "user",
-                                    content: [
-                                        { type: "text", text: prompt },
-                                        { type: "image_url", image_url: { url: dataUri } },
-                                    ],
-                                },
-                            ],
-                            stream: true,
-                        };
+                            contents: [{ role: "user", parts }],
+                        });
+
+                        for await (const chunk of stream) {
+                            const text = chunk.text;
+                            if (text) {
+                                controller.enqueue(encoder.encode(text));
+                            }
+                        }
+                        controller.close();
                         break;
                     }
                     default:
                         throw new Error(`Unsupported streaming task: ${task}`);
                 }
-
-                const response = await fetch(`${API_BASE}/chat/completions`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${apiKey}`,
-                    },
-                    body: JSON.stringify(body),
-                });
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`GitHub Models API error (${response.status}): ${errorText}`);
-                }
-
-                const reader = response.body!.getReader();
-                const decoder = new TextDecoder();
-                let buffer = "";
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-
-                    buffer += decoder.decode(value, { stream: true });
-                    const lines = buffer.split("\n");
-                    // Keep the last (potentially incomplete) line in the buffer
-                    buffer = lines.pop() || "";
-
-                    for (const line of lines) {
-                        const trimmed = line.trim();
-                        if (!trimmed || !trimmed.startsWith("data: ")) continue;
-                        const data = trimmed.slice(6);
-                        if (data === "[DONE]") continue;
-                        try {
-                            const parsed = JSON.parse(data);
-                            const content = parsed.choices?.[0]?.delta?.content;
-                            if (content) {
-                                controller.enqueue(encoder.encode(content));
-                            }
-                        } catch {
-                            // skip malformed chunks
-                        }
-                    }
-                }
-                controller.close();
             } catch (e) {
                 controller.error(e);
             }
@@ -148,39 +112,33 @@ export const generateAIResponse = async (
     task: string,
     payload: Record<string, any>,
 ): Promise<any> => {
-    const apiKey = getApiKey();
+    const client = getClient();
 
     switch (task) {
         case "groundedSearch":
         case "groundedMaps":
         case "chat": {
             const { messages, model, systemInstruction } = payload;
-            const body = {
-                model,
-                messages: buildMessages(systemInstruction, messages),
-            };
+            const contents = buildContents(messages);
 
-            const response = await fetch(`${API_BASE}/chat/completions`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${apiKey}`,
+            const tools = (task === "groundedSearch" || task === "groundedMaps")
+                ? [{ googleSearch: {} }]
+                : undefined;
+
+            const result = await client.models.generateContent({
+                model,
+                contents,
+                config: {
+                    ...(systemInstruction ? { systemInstruction } : {}),
+                    ...(tools ? { tools } : {}),
                 },
-                body: JSON.stringify(body),
             });
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`GitHub Models API error (${response.status}): ${errorText}`);
-            }
+            const text = result.text ?? "";
+            const groundingMetadata = result.candidates?.[0]?.groundingMetadata;
+            const sources = groundingMetadata?.groundingChunks ?? [];
 
-            const result = await response.json();
-            return {
-                text: result.choices?.[0]?.message?.content ?? "",
-                // GitHub Models does not provide grounding sources;
-                // return an empty array for API compatibility.
-                sources: [],
-            };
+            return { text, sources };
         }
         default:
             throw new Error(`Unsupported non-streaming task: ${task}`);
