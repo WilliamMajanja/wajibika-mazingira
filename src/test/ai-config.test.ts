@@ -3,15 +3,15 @@ import { MODELS, ASSESSMENT_EXPERT_INSTRUCTION, CHAT_DEFAULT_SYSTEM_INSTRUCTION,
 
 describe('MODELS config', () => {
   it('defines flash_lite model', () => {
-    expect(MODELS.flash_lite).toBe('gpt-4o-mini');
+    expect(MODELS.flash_lite).toBe('gemini-2.0-flash-lite');
   });
 
   it('defines flash model', () => {
-    expect(MODELS.flash).toBe('gpt-4o');
+    expect(MODELS.flash).toBe('gemini-2.0-flash');
   });
 
   it('defines pro model', () => {
-    expect(MODELS.pro).toBe('gpt-4o');
+    expect(MODELS.pro).toBe('gemini-2.5-flash');
   });
 
   it('defines tts model', () => {

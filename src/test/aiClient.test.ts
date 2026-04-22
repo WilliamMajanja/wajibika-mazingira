@@ -1,27 +1,41 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Mock global fetch
-const mockFetch = vi.fn();
-vi.stubGlobal('fetch', mockFetch);
+// Mock @google/genai module
+const mockGenerateContentStream = vi.fn();
+const mockGenerateContent = vi.fn();
+
+vi.mock('@google/genai', () => {
+    return {
+        GoogleGenAI: function GoogleGenAI() {
+            return {
+                models: {
+                    generateContentStream: mockGenerateContentStream,
+                    generateContent: mockGenerateContent,
+                },
+            };
+        },
+    };
+});
 
 describe('aiClient', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.unstubAllEnvs();
-    mockFetch.mockReset();
+    mockGenerateContentStream.mockReset();
+    mockGenerateContent.mockReset();
   });
 
   describe('streamAIResponse', () => {
-    it('throws when GitHub token is not configured', async () => {
-      vi.stubEnv('VITE_GITHUB_TOKEN', '');
+    it('throws when Gemini API key is not configured', async () => {
+      vi.stubEnv('VITE_GEMINI_API_KEY', '');
       const { streamAIResponse } = await import('../services/aiClient');
       await expect(streamAIResponse('chat', {})).rejects.toThrow(
-        'GitHub token is not configured'
+        'Gemini API key is not configured'
       );
     });
 
     it('throws for unsupported streaming task', async () => {
-      vi.stubEnv('VITE_GITHUB_TOKEN', 'test-token');
+      vi.stubEnv('VITE_GEMINI_API_KEY', 'test-key');
       const { streamAIResponse } = await import('../services/aiClient');
       const stream = await streamAIResponse('unsupportedTask', {});
       const reader = stream.getReader();
@@ -29,7 +43,7 @@ describe('aiClient', () => {
     });
 
     it('throws for transcribeAudio task (no longer supported)', async () => {
-      vi.stubEnv('VITE_GITHUB_TOKEN', 'test-token');
+      vi.stubEnv('VITE_GEMINI_API_KEY', 'test-key');
       const { streamAIResponse } = await import('../services/aiClient');
       const stream = await streamAIResponse('transcribeAudio', {});
       const reader = stream.getReader();
@@ -37,32 +51,19 @@ describe('aiClient', () => {
     });
 
     it('returns a ReadableStream for chat task', async () => {
-      vi.stubEnv('VITE_GITHUB_TOKEN', 'test-token');
+      vi.stubEnv('VITE_GEMINI_API_KEY', 'test-key');
 
-      // Simulate an SSE streaming response
-      const sseBody = [
-        'data: {"choices":[{"delta":{"content":"Hello"}}]}\n\n',
-        'data: {"choices":[{"delta":{"content":" World"}}]}\n\n',
-        'data: [DONE]\n\n',
-      ].join('');
-      const encoder = new TextEncoder();
-
-      const mockReadableStream = new ReadableStream({
-        start(controller) {
-          controller.enqueue(encoder.encode(sseBody));
-          controller.close();
-        },
-      });
-
-      mockFetch.mockResolvedValue({
-        ok: true,
-        body: mockReadableStream,
-      });
+      // Simulate Gemini streaming response
+      const mockAsyncIterator = (async function* () {
+        yield { text: 'Hello' };
+        yield { text: ' World' };
+      })();
+      mockGenerateContentStream.mockResolvedValue(mockAsyncIterator);
 
       const { streamAIResponse } = await import('../services/aiClient');
       const stream = await streamAIResponse('chat', {
         messages: [{ role: 'user', text: 'hi' }],
-        model: 'gpt-4o',
+        model: 'gemini-2.0-flash',
         systemInstruction: 'Be helpful',
       });
 
@@ -82,54 +83,56 @@ describe('aiClient', () => {
 
   describe('generateAIResponse', () => {
     it('throws for unsupported non-streaming task', async () => {
-      vi.stubEnv('VITE_GITHUB_TOKEN', 'test-token');
+      vi.stubEnv('VITE_GEMINI_API_KEY', 'test-key');
       const { generateAIResponse } = await import('../services/aiClient');
       await expect(
         generateAIResponse('unsupportedTask', {})
       ).rejects.toThrow('Unsupported non-streaming task');
     });
 
-    it('returns text and empty sources for groundedSearch task', async () => {
-      vi.stubEnv('VITE_GITHUB_TOKEN', 'test-token');
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: async () => ({
-          choices: [{ message: { content: 'Search result' } }],
-        }),
+    it('returns text and sources for groundedSearch task', async () => {
+      vi.stubEnv('VITE_GEMINI_API_KEY', 'test-key');
+      mockGenerateContent.mockResolvedValue({
+        text: 'Search result',
+        candidates: [{
+          groundingMetadata: {
+            groundingChunks: [{ web: { uri: 'https://example.com', title: 'Example' } }],
+          },
+        }],
       });
 
       const { generateAIResponse } = await import('../services/aiClient');
       const result = await generateAIResponse('groundedSearch', {
         messages: [{ role: 'user', text: 'test' }],
-        model: 'gpt-4o',
+        model: 'gemini-2.0-flash',
         systemInstruction: 'instruction',
       });
 
       expect(result.text).toBe('Search result');
-      expect(result.sources).toEqual([]);
+      expect(result.sources).toEqual([{ web: { uri: 'https://example.com', title: 'Example' } }]);
     });
 
-    it('throws on API error response', async () => {
-      vi.stubEnv('VITE_GITHUB_TOKEN', 'test-token');
-      mockFetch.mockResolvedValue({
-        ok: false,
-        status: 401,
-        text: async () => 'Unauthorized',
+    it('returns text and empty sources for chat task', async () => {
+      vi.stubEnv('VITE_GEMINI_API_KEY', 'test-key');
+      mockGenerateContent.mockResolvedValue({
+        text: 'Chat response',
+        candidates: [{}],
       });
 
       const { generateAIResponse } = await import('../services/aiClient');
-      await expect(
-        generateAIResponse('chat', {
-          messages: [{ role: 'user', text: 'hi' }],
-          model: 'gpt-4o',
-        })
-      ).rejects.toThrow('GitHub Models API error (401)');
+      const result = await generateAIResponse('chat', {
+        messages: [{ role: 'user', text: 'hi' }],
+        model: 'gemini-2.0-flash',
+      });
+
+      expect(result.text).toBe('Chat response');
+      expect(result.sources).toEqual([]);
     });
   });
 
   describe('speakText', () => {
     it('throws when speechSynthesis is not available', async () => {
-      vi.stubEnv('VITE_GITHUB_TOKEN', 'test-token');
+      vi.stubEnv('VITE_GEMINI_API_KEY', 'test-key');
 
       // Temporarily remove speechSynthesis from window
       const original = (window as any).speechSynthesis;
