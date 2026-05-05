@@ -117,6 +117,10 @@ This project is configured for automatic deployment via GitHub Actions.
     -   Add a new repository secret:
         -   **Name**: `VITE_GEMINI_API_KEY`
         -   **Value**: `Your-Gemini-API-Key-Here`
-4.  Push to the `main` branch (or trigger the workflow manually). Your site will be live at `https://<username>.github.io/wajibika-mazingira/`.
+4.  Optional Pi Browser payment configuration:
+    -   Add `VITE_PI_PAYMENT_ENDPOINT` as an Actions secret if you have a payment approval/completion backend.
+    -   Add `VITE_PI_SANDBOX=true` as an Actions variable only when deploying a sandbox/test build. Production GitHub Pages builds default to Pi mainnet.
+    -   If no payment endpoint is configured, premium features remain available so the static GitHub Pages app does not show an unusable payment flow.
+5.  Push to the `main` branch (or trigger the workflow manually). Your site will be live at `https://<username>.github.io/wajibika-mazingira/`.
 
 > **Note:** Because GitHub Pages is a static host, the API key is embedded in the built JavaScript bundle. Use API key restrictions in [Google AI Studio](https://aistudio.google.com/apikey) to limit usage to your deployment domain.
