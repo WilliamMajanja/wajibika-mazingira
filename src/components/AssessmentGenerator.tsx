@@ -9,7 +9,6 @@ import { getSectionPrompt } from '../utils/promptBuilder';
 import { streamAIResponse } from '../services/aiClient';
 import { usePiAuth } from '../contexts/PiAuthContext';
 import { PiPaymentButton } from './PiPaymentButton';
-import { isPiPaymentConfigured } from '../services/piNetworkService';
 
 const assessmentTypes: AssessmentType[] = ['Environmental', 'Social', 'Health', 'Climate', 'Cumulative'];
 
@@ -38,8 +37,7 @@ export const AssessmentGenerator: React.FC = () => {
   const [deepAnalysisUnlocked, setDeepAnalysisUnlocked] = React.useState(false);
   const [assessments, setAssessments] = useLocalStorage<Assessment[]>('assessments', []);
   const { addToast } = useToasts();
-  const { sdkAvailable } = usePiAuth();
-  const piPaymentsEnabled = sdkAvailable && isPiPaymentConfigured();
+  const { user, sdkAvailable } = usePiAuth();
   const reportContainerRef = React.useRef<HTMLDivElement | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -211,7 +209,7 @@ export const AssessmentGenerator: React.FC = () => {
                         <label htmlFor="deepAnalysis" className="font-medium text-slate-700">Deep Analysis</label>
                         <p className="text-xs text-slate-500">Uses a more powerful AI model for complex topics. Slower generation.</p>
                     </div>
-                    {(!piPaymentsEnabled || deepAnalysisUnlocked) ? (
+                    {(!sdkAvailable || deepAnalysisUnlocked || !user) ? (
                       <button
                           type="button"
                           role="switch"

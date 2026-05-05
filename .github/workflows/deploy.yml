@@ -35,8 +35,6 @@ jobs:
         run: npm run build
         env:
           VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
-          VITE_PI_PAYMENT_ENDPOINT: ${{ secrets.VITE_PI_PAYMENT_ENDPOINT }}
-          VITE_PI_SANDBOX: ${{ vars.VITE_PI_SANDBOX }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

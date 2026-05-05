@@ -6,7 +6,6 @@ import {
   isPiSdkAvailable,
   initPiSdk,
   authenticateUser,
-  isPiSandboxMode,
 } from '../services/piNetworkService';
 
 interface PiAuthState {
@@ -35,7 +34,8 @@ export const PiAuthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // Initialise Pi SDK on mount
   React.useEffect(() => {
     if (sdkAvailable) {
-      initPiSdk(isPiSandboxMode());
+      // Set sandbox to true for development; flip to false for mainnet
+      initPiSdk(true);
     }
   }, [sdkAvailable]);
 
