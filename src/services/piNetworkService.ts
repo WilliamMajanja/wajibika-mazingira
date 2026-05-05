@@ -15,11 +15,34 @@ import type {
  */
 export const isPiSdkAvailable = (): boolean => typeof window !== 'undefined' && !!window.Pi;
 
+const parseBooleanEnv = (value: string | boolean | undefined, defaultValue: boolean): boolean => {
+  if (typeof value === 'boolean') return value;
+  if (value === undefined || value === '') return defaultValue;
+  return ['1', 'true', 'yes', 'on'].includes(value.toLowerCase());
+};
+
+/**
+ * GitHub Pages is a production static host, so default Pi SDK usage to mainnet
+ * for production builds unless VITE_PI_SANDBOX explicitly opts into sandbox.
+ */
+export const isPiSandboxMode = (): boolean => (
+  parseBooleanEnv(import.meta.env.VITE_PI_SANDBOX as string | undefined, import.meta.env.DEV)
+);
+
+/**
+ * Pi payments need a server endpoint for approval/completion. Static GitHub
+ * Pages deployments can omit this endpoint, in which case premium features
+ * should remain usable instead of showing an unusable payment flow.
+ */
+export const isPiPaymentConfigured = (): boolean => (
+  !!(import.meta.env.VITE_PI_PAYMENT_ENDPOINT as string | undefined)
+);
+
 /**
  * Initialise the Pi SDK. Should be called once at app startup.
  * In production set `sandbox` to `false`.
  */
-export const initPiSdk = (sandbox = true): void => {
+export const initPiSdk = (sandbox = isPiSandboxMode()): void => {
   if (!isPiSdkAvailable()) {
     console.warn('Pi SDK is not available. Running outside Pi Browser.');
     return;

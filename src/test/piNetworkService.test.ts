@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   isPiSdkAvailable,
+  isPiSandboxMode,
+  isPiPaymentConfigured,
   initPiSdk,
   authenticateUser,
   createPayment,
@@ -20,6 +22,38 @@ describe('isPiSdkAvailable', () => {
   it('returns true when Pi is on window', () => {
     (window as any).Pi = { init: vi.fn() };
     expect(isPiSdkAvailable()).toBe(true);
+  });
+});
+
+describe('isPiSandboxMode', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('defaults to sandbox in non-production test builds', () => {
+    vi.stubEnv('VITE_PI_SANDBOX', '');
+    expect(isPiSandboxMode()).toBe(true);
+  });
+
+  it('can be disabled for mainnet deployments', () => {
+    vi.stubEnv('VITE_PI_SANDBOX', 'false');
+    expect(isPiSandboxMode()).toBe(false);
+  });
+});
+
+describe('isPiPaymentConfigured', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('returns false without a payment endpoint', () => {
+    vi.stubEnv('VITE_PI_PAYMENT_ENDPOINT', '');
+    expect(isPiPaymentConfigured()).toBe(false);
+  });
+
+  it('returns true when a payment endpoint is configured', () => {
+    vi.stubEnv('VITE_PI_PAYMENT_ENDPOINT', 'https://example.com/pi-payments');
+    expect(isPiPaymentConfigured()).toBe(true);
   });
 });
 
