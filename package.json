@@ -27,7 +27,7 @@
     "lint:typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "dompurify": "^3.4.10",
+    "dompurify": "^3.4.12",
     "html2pdf.js": "^0.14.0",
     "marked": "^12.0.2",
     "react": "^19.2.7",
