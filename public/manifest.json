@@ -1,0 +1,27 @@
+{
+  "name": "Wajibika Mazingira",
+  "short_name": "Wajibika",
+  "description": "AI-powered environmental conservation and carbon credit management platform",
+  "start_url": "/wajibika-mazingira/",
+  "scope": "/wajibika-mazingira/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f1f5f9",
+  "theme_color": "#16a34a",
+  "lang": "sw-KE",
+  "categories": ["environment", "climate", "finance"],
+  "icons": [
+    {
+      "src": "/wajibika-mazingira/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/wajibika-mazingira/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "splash_pages": null
+}

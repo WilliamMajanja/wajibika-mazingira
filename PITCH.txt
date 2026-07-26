@@ -1,0 +1,434 @@
+================================================================================
+                        WAJIBIKA MAZINGIRA
+           HIGH-LEVEL PRESENTATION PITCH
+           English & Swahili | June 2026
+================================================================================
+
+================================================================================
+              PART 1: ENGLISH VERSION
+================================================================================
+
+--------------------------------------------------------------------------------
+                          WAJIBIKA MAZINGIRA
+                     "Be Responsible for the Environment"
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+1. THE PROBLEM
+--------------------------------------------------------------------------------
+
+East Africa faces an existential environmental crisis. Over 50% of mangrove
+forests have been lost in the last two decades. Coral reefs are bleaching. Carbon
+emissions are rising unchecked. Yet communities who live closest to these
+ecosystems have no tools to monitor, protect, or benefit from conservation.
+Carbon credit markets remain opaque, centralized, and inaccessible to grassroots
+actors. Environmental impact assessments are expensive, slow, and rarely reach
+the communities they affect.
+
+The question is not whether we can afford to act — it's whether we can afford
+not to.
+
+--------------------------------------------------------------------------------
+2. THE SOLUTION
+--------------------------------------------------------------------------------
+
+Wajibika Mazingira is an AI-powered, community-driven environmental conservation
+and carbon credit platform built for East Africa. It is the FIRST INTEGRATED
+PLATFORM that unifies:
+
+  1. AI Environmental Impact Assessments — Generate professional-grade reports
+     in minutes, not months
+  2. Carbon Credit Lifecycle Management — From project registration to credit
+     issuance, trading, and retirement
+  3. Decentralized Carbon Marketplace — Real-time price discovery, order matching,
+     and transparent trading
+  4. DAO-Style Community Governance — Weighted voting where communities decide
+     carbon standards and project approvals
+  5. Cryptographic Carbon Passports — Tamper-proof environmental evidence anchored
+     to blockchain
+  6. Real-Time IoT Monitoring — Raspberry Pi 5 sensors tracking air, water, soil,
+     and biodiversity metrics
+
+One platform. One mission. One planet.
+
+--------------------------------------------------------------------------------
+3. HOW IT WORKS
+--------------------------------------------------------------------------------
+
+  Stage          Action
+  ----------     -----------------------------------------------------------
+  Register       Community registers a conservation project (reforestation,
+                 blue carbon, agroforestry)
+  Monitor        IoT sensors collect real-time environmental data; AI generates
+                 impact assessments
+  Verify         VEIN Sense cryptographic signatures + Minima blockchain
+                 anchoring ensure tamper-proof evidence
+  Issue          Carbon credits are automatically issued based on verified
+                 sequestration rates
+  Trade          Credits are listed on the decentralized marketplace; buyers
+                 and sellers trade transparently
+  Govern         Community votes on standards, pricing, and project approvals
+                 through the DAO portal
+  Retire         Credits are permanently retired, closing the loop on verified
+                 climate action
+
+--------------------------------------------------------------------------------
+4. ZANZIBAR: THE LIVING SHOWCASE
+--------------------------------------------------------------------------------
+
+Zanzibar is our flagship use case — a living laboratory demonstrating platform
+impact:
+
+  - 20,000+ hectares of mangrove forest under active monitoring
+  - 1,500+ km² of coral reef ecosystem protection
+  - 350+ marine species tracked through conservation projects
+  - 500,000+ tCO₂/yr carbon sequestration potential
+  - Women-led seaweed farming cooperatives generating income while sequestering
+    carbon
+  - Full Swahili integration — the platform speaks the language of the
+    communities it serves
+
+--------------------------------------------------------------------------------
+5. WHAT MAKES US DIFFERENT
+--------------------------------------------------------------------------------
+
+  Differentiator              Detail
+  -------------------------   ------------------------------------------------
+  Privacy-First AI            Ollama runs locally — no data leaves the user's
+                              device. Zero API keys required.
+
+  No Server-Side Database     All data persists in-browser via localStorage.
+                              True data sovereignty.
+
+  End-to-End Carbon Lifecycle Registration → Issuance → Trading → Retirement →
+                              Governance — all in one platform.
+
+  Cryptographic Verification  VEIN Sense sensors + Minima blockchain create
+                              defensible, auditable carbon claims.
+
+  Community-Owned Governance  DAO-style voting weighted by actual carbon project
+                              ownership and credit holdings.
+
+  Culturally Integrated      Swahili-first design with 400+ translated terms and
+                              East African Community region data.
+
+  Affordable Hardware         Runs on Raspberry Pi 5 ($35–$75) with simulation
+                              mode for areas without GPIO sensors.
+
+  Multi-Provider AI Fallback  Ollama → OpenRouter → QVAC with automatic failover
+                              and retry logic.
+
+--------------------------------------------------------------------------------
+6. BY THE NUMBERS
+--------------------------------------------------------------------------------
+
+  - 20+ UI Components — Assessment, Dashboard, Market, Governance, Passport,
+    Evidence, Chat, Showcase
+  - 400+ i18n Translation Keys — Full Swahili and English support
+  - 7 AI-Assisted Features — Impact analysis, market insights, debate analysis,
+    price prediction, image analysis, community assistant, carbon potential
+  - 13+ Sensor Types — Temperature, humidity, CO₂, PM2.5, soil moisture, UV,
+    water quality, wind, and more
+  - 3 AI Providers — Ollama (local/free), OpenRouter (cloud/free), QVAC
+    (cloud/free)
+  - 9 Assessment Categories — Environmental, Social, Health, Climate, Carbon,
+    Monitoring, Engagement, Compliance, Financial, Risk
+
+--------------------------------------------------------------------------------
+7. GOVERNANCE MODEL
+--------------------------------------------------------------------------------
+
+The platform implements decentralized autonomous organization (DAO) principles:
+
+  - 10 Voting Power per carbon project owned
+  - 1 Voting Power per carbon credit held
+  - 20% quorum threshold for decision validity
+  - 7-day voting windows with automatic evaluation
+  - Categories: Carbon Standards, Pricing, Project Approval, Parameter Changes,
+    Funding
+  - AI-powered debate analysis to help voters make informed decisions
+
+Communities don't just participate in conservation — they lead it.
+
+--------------------------------------------------------------------------------
+8. REVENUE MODEL
+--------------------------------------------------------------------------------
+
+  Stream                      Description
+  --------------------------  ------------------------------------------------
+  Premium AI Analysis         Deep analysis reports unlocked via Pi
+                              micro-payments (0.1 Pi)
+
+  PDF Export                  Professional report generation (0.05 Pi per
+                              export)
+
+  Market Transaction Fees     Small commission on carbon credit trades
+
+  Carbon Passport             Fee-for-service cryptographic verification
+  Verification
+
+  Enterprise API Access       Bulk assessment and monitoring services for NGOs
+                              and governments
+
+--------------------------------------------------------------------------------
+9. TECHNOLOGY STACK
+--------------------------------------------------------------------------------
+
+  - Frontend:    React 19 + TypeScript + Vite 8 + Tailwind CSS
+  - Backend:     Node.js 20 + Express.js (PDF generation)
+  - AI:          Ollama (local) + OpenRouter (cloud) + QVAC (cloud)
+  - IoT:         Python 3.7+ + Raspberry Pi 5 GPIO + Multi-sensor array
+  - Blockchain:  Minima anchoring for audit trail immutability
+  - Payments:    Pi Network SDK v2.0 (sandbox + mainnet)
+  - Deployment:  Docker + Kubernetes/k3s + GitHub Actions CI/CD
+  - i18n:        Swahili (default) + English
+
+--------------------------------------------------------------------------------
+10. SDG ALIGNMENT
+--------------------------------------------------------------------------------
+
+  Goal                        Contribution
+  --------------------------  ------------------------------------------------
+  SDG 13 — Climate Action     Carbon sequestration tracking, credit issuance,
+                              market trading
+
+  SDG 15 — Life on Land       Reforestation, agroforestry, soil carbon projects
+
+  SDG 14 — Life Below Water   Blue carbon, mangrove conservation, coral reef
+                              protection
+
+  SDG 12 — Responsible        Transparent carbon credit lifecycle and
+  Consumption                 retirement
+
+  SDG 17 — Partnerships       DAO governance, community-driven decision making
+
+  SDG 5 — Gender Equality     Women-led cooperatives (Zanzibar seaweed farming)
+
+--------------------------------------------------------------------------------
+11. VISION
+--------------------------------------------------------------------------------
+
+Wajibika Mazingira is not just a platform — it is a MOVEMENT. A movement that
+puts environmental stewardship in the hands of the communities who depend on it
+most. A movement that makes carbon credits transparent, verifiable, and
+community-owned. A movement that proves technology can serve the planet, not
+just profit.
+
+We are building the digital infrastructure for Africa's environmental future.
+
+Wajibika Mazingira. Be Responsible. Be Verified. Be Rewarded.
+
+
+================================================================================
+              PART 2: SWAHILI VERSION (KISWAHILI)
+================================================================================
+
+--------------------------------------------------------------------------------
+                          WAJIBIKA MAZINGIRA
+                   "Jukumu Lako ni Kulinda Mazingira"
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+1. SHIDA TUPU
+--------------------------------------------------------------------------------
+
+Mashariki ya Afrika inakabiliwa na hatari kubwa ya mazingira. Zaidi ya 50% ya
+misitu ya mikoko imepotea katika miongo miwili iliyopita. Miamba ya miamba
+inayeyuka. Utoaji wa kaboni unakua bila udhibiti. Lakini jamii zinazoishi
+karibu na mazingira hawa hazina zana za kufuatilia, kulinda, au kunufaika na
+uhifadhi. Masoko ya mikopo ya kaboni ni ya zamani, ya kati, na haipatikani kwa
+watu wa chini. Tathmini za athari za mazingira ni ghali, zinachukua muda mrefu,
+na hazifiki jamii walioathiriwa.
+
+Swali si kama tunaweza kumudu kuchukua hatua — ni kama tunaweza kumudu
+kutofanya hivyo.
+
+--------------------------------------------------------------------------------
+2. UTATUZI
+--------------------------------------------------------------------------------
+
+Wajibika Mazingira ni jukwaa la uwezeshaji wa jamii kwa kutumia akili bandia
+(AI) linalolenga uhifadhi wa mazingira na usimamizi wa mikopo ya kaboni kwa
+Mashariki ya Afrika. Ni JUKWAA LA KWANZA LILILOJUMLISHA:
+
+  1. Tathmini za Athari za Mazingira kwa AI — Tengeneza ripoti za kiwango cha
+     kitaalamu kwa dakika si miezi
+  2. Usimamizi wa Mizizi ya Mikopo ya Kaboni — Kuanzia usajili wa mradi hadi
+     utoaji, biashara, na kufuta mikopo
+  3. Soko la Mikopo ya Kaboni la Kijamii — Ugavi wa bei wa wakati halisi,
+     ufananishaji wa agizo, na biashara ya uwazi
+  4. Uongozi wa Jamii kwa Mtindo wa DAO — Kura yenye uzito ambapo jamii huamua
+     viwango vya kaboni na uthibitishaji wa miradi
+  5. Hesabu za Kaboni za Kriptografia — Ushahidi wa mazingira usio na ubifu wa
+     blockchain
+  6. Ufuatiliaji wa IoT wa Wakati Halisi — Vifaa vya Raspberry Pi 5 vinavyo-
+     fuatilia hewa, maji, udongo, na viwango vya uhai
+
+Jukwaa moja. Dhamira moja. Dunia moja.
+
+--------------------------------------------------------------------------------
+3. JINSI INAVYOFANYA KAZI
+--------------------------------------------------------------------------------
+
+  Hatua           Kitendo
+  ----------      -----------------------------------------------------------
+  Sajili          Jamii inasajili mradi wa uhifadhi (upandaji miti, kaboni ya
+                  bluu, kilimo mseto)
+
+  Fuatilia        Vifaa vya IoT vinakusanya data ya mazingira ya wakati halisi;
+                  AI inazalisha tathmini za athari
+
+  Thibitisha      Saini za kriptografia za VEIN Sense + kuunganisha Minima
+                  blockchain kuhakikisha ushahidi usio na ubifu
+
+  Toa             Mikopo ya kaboni hutolewa kiotomatiki kulingana na viwango vya
+                  uthibitishwa
+
+  Biashara        Mikopo inawekwa kwenye soko la kijamii; wauzaji na wanunuzi
+                  wanabiashara kwa uwazi
+
+  Simamia         Jamii inapiga kura kuhusu viwango, bei, na uthibitishaji wa
+                  miradi kupitia lango la DAO
+
+  Futa            Mikopo inafutwa kabisa, ikimaliza mzunguko wa hatua za hali ya
+                  hewa zilizothibitishwa
+
+--------------------------------------------------------------------------------
+4. ZANZIBAR: ONYESHA HALISI
+--------------------------------------------------------------------------------
+
+Zanzibar ni kesi yetu ya mwanzo — maabara hai inayoonyesha athari za jukwaa:
+
+  - Hektari 20,000+ za msitu wa mikoko zinazofuatiliwa kwa ufanisi
+  - Eneo la km² 1,500+ la ulinzi wa miamba ya baharini
+  - Aina 350+ za baharini zinazofuatiliwa kupitia miradi ya uhifadhi
+  - Uwezo wa tCO₂/yr 500,000+ wa uondoaji wa kaboni
+  - Vikundi vya ufugaji wa alga vinavyoongozwa na wanawake vinaingiza mapato
+    huku vikiunda kaboni
+  - Ujumuishaji kamili wa Kiswahili — jukwaa linazungumza lugha ya jamii
+    linazohudumia
+
+--------------------------------------------------------------------------------
+5. TUNATOFAUTIANA VPI
+--------------------------------------------------------------------------------
+
+  Tofauti                    Maelezo
+  -------------------------  -------------------------------------------------
+  AI ya Faragha Kwanza       Ollama inafanya kazi ndani — data haondoki kwenye
+                             kifaa. Zero funguo za API zinahitajika.
+
+  Hakuna Hifadhidata ya      Data yote inadumu ndani ya kivinjari kupitia
+  Seva                       localStorage. Ukweli wa umiliki wa data.
+
+  Mzunguko Kamili wa Kaboni  Usajili → Utoaji → Biashara → Kufuta → Uongozi —
+                             yote kwenye jukwaa moja.
+
+  Uthibitishaji wa           Vifaa vya VEIN Sense + Minima blockchain ku-
+  Kriptografia               uunda madai ya kaboni yanayoweza kuthibitishwa.
+
+  Uongozi Unamilikiwa na     Kura za DAO zilizo na uzito kulingana na umiliki
+  Jamii                      halisi wa miradi ya kaboni na mikopo.
+
+  Ujumuishaji wa Kitamaduni Muundo wa Kiswahili kwanza na maneno 400+
+                             yaliyotafsiriwa na data za nchi za Jumuiya ya
+                             Afrika Mashariki.
+
+  Vifaa vya Bei Nafuu        Inafanya kazi kwenye Raspberry Pi 5 ($35–$75) na
+                             hali ya uigaji kwa maeneo bila vifaa vya GPIO.
+
+  Mfumo Mbadala wa AI wa     Ollama → OpenRouter → QVAC na kushindwa
+  Wingu Mbaluzi              kiotomatiki na mantiki ya jaribio la mara kwa mara.
+
+--------------------------------------------------------------------------------
+6. KWA NAMBARI
+--------------------------------------------------------------------------------
+
+  - Vipengele 20+ vya UI — Tathmini, Dashibodi, Soko, Uongozi, Hesabu,
+    Ushahidi, Mazungumzo, Onyesho
+  - Ufunguzi 400+ wa i18n — Msaada kamili wa Kiswahili na Kiingereza
+  - Vipengele 7 vinavyosaidiwa na AI — Tathmini ya athari, maarifa ya soko,
+    uchambuzi wa mjadala, ubashiri wa bei, uchambuzi wa picha, msaidizi wa
+    jamii, uwezo wa kaboni
+  - Aina 13+ za vifaa — Joto, unyevu, CO₂, PM2.5, unyevu wa udongo, UV,
+    ubora wa maji, upepo, na zaidi
+  - Watoa AI 3 — Ollama (ndani/bure), OpenRouter (wingu/bure), QVAC (wingu/bure)
+  - Aina 9 za Tathmini — Mazingira, Kijamii, Afya, Hali ya Hewa, Kaboni,
+    Ufuatiliaji, Ushiriki, Utingishwaji, Fedha, Hatari
+
+--------------------------------------------------------------------------------
+7. MFUMO WA UONGOZI
+--------------------------------------------------------------------------------
+
+Jukwaa linatekeleza kanuni za shirika la kujitawala la kijamii (DAO):
+
+  - Uwezo wa Kura 10 kwa kila mradi wa kaboni unaomilikiwa
+  - Uwezo wa Kura 1 kwa kila mkopo wa kaboni uliopo
+  - Kiwiki cha 20% kwa uhalali wa maamuzi
+  - Siku 7 za kupiga kura na tathmini ya kiotomatiki
+  - Mada: Viwango vya Kaboni, Bei, Uthibitishaji wa Miradi, Mabadiliko ya
+    Parameta, Fedha
+  - Uchambuzi wa mjadala unaosaidiwa na AI kusaidia wapigaji kura kufanya
+    maamuzi ya taarifa
+
+Jamii si tu zinashiriki katika uhifadhi — zinaongoza.
+
+--------------------------------------------------------------------------------
+8. NJIA YA MAPATO
+--------------------------------------------------------------------------------
+
+  Mkutano                       Maelezo
+  ----------------------------  ------------------------------------------------
+  Tathmini ya Premium ya AI     Ripoti za uchambuzi wa kina zinazofunguliwa
+                                kupitia malipo madogo ya Pi (0.1 Pi)
+
+  Kuuza PDF                     Uzalishaji wa ripoti za kitaalamu (0.05 Pi kwa
+                                kila nukta)
+
+  Ada za Muamala wa Soko        Komishoni ndogo kwenye biashara za mikopo ya
+                                kaboni
+
+  Uthibitishaji wa Hesabu ya    Ada kwa huduma za uthibitishaji wa kriptografia
+  Kaboni
+
+  Upatikanaji wa API wa         Huduma za tathmini na ufuatiliaji kwa wingi kwa
+  Biashara                     NGO na serikali
+
+--------------------------------------------------------------------------------
+9. TEKNOLOJIA
+--------------------------------------------------------------------------------
+
+  - Mbele:      React 19 + TypeScript + Vite 8 + Tailwind CSS
+  - Nyuma:      Node.js 20 + Express.js (uzalishaji wa PDF)
+  - AI:         Ollama (ndani) + OpenRouter (wingu) + QVAC (wingu)
+  - IoT:        Python 3.7+ + Raspberry Pi 5 GPIO + safu nyingi za vifaa
+  - Blockchain: Minima anchoring kwa uthabiti wa njia ya uchunguzi
+  - Malipo:     Pi Network SDK v2.0 (sandbox + mainnet)
+  - Utoaji:     Docker + Kubernetes/k3s + GitHub Actions CI/CD
+  - Ukimilishaji: Kiswahili (chaguo-msingi) + Kiingereza
+
+--------------------------------------------------------------------------------
+10. MSTAKABALI
+--------------------------------------------------------------------------------
+
+Wajibika Mazingira si jukwaa tu — ni MAENDELEO. Maendeleo yanayoweka uongozi
+wa mazingira mikono mwa jamii zinazozitegemea zaidi. Maendeleo yanayofanya
+mikopo ya kaboni kuwa wazi, inayoweza kuthibitishwa, na inayomilikiwa na jamii.
+Maendeleo yanayothibitisha teknolojia inaweza kuitumikia sayari, si faida tu.
+
+Tunaunda miundombinu ya kidijitali ya mustakabali wa mazingira wa Afrika.
+
+Wajibika Mazingira. Jukumu Lako. Uthibitishwa. Zawadiwa.
+
+
+================================================================================
+                          CONTACT & RESOURCES
+================================================================================
+
+  Author:       William Majanja
+  Repository:   github.com/WilliamMajanja/wajibika-mazingira
+  Version:      0.1.0
+  Date:         June 2026
+
+================================================================================
+                          END OF PITCH DOCUMENT
+================================================================================

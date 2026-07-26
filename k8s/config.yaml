@@ -1,0 +1,177 @@
+---
+# ConfigMap for frontend configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wajibika-config
+  namespace: wajibika-mazingira
+data:
+  # API configuration
+  API_BASE_URL: "http://wajibika-server:4001"
+  API_TIMEOUT: "30000"
+  
+  # AI configuration defaults
+  AI_PROVIDER: "ollama"  # Options: ollama, openrouter
+  OLLAMA_BASE_URL: "http://ollama:11434"
+  
+  # Feature flags
+  ENABLE_IMAGE_ANALYSIS: "true"
+  ENABLE_MARKET_TRADING: "true"
+  ENABLE_GOVERNANCE: "true"
+  
+  # PDF generation
+  PDF_MAX_SIZE_MB: "25"
+
+---
+# ConfigMap for Nginx configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  namespace: wajibika-mazingira
+data:
+  nginx.conf: |
+    server {
+        listen 80;
+        server_name _;
+        client_max_body_size 5m;
+
+        root /usr/share/nginx/html;
+        index index.html;
+
+        # Main application routes
+        location /wajibika-mazingira/ {
+            try_files $uri $uri/ /wajibika-mazingira/index.html;
+            expires 1h;
+            add_header Cache-Control "public, must-revalidate" always;
+        }
+
+        # Static assets with caching
+        location /wajibika-mazingira/assets/ {
+            expires 30d;
+            add_header Cache-Control "public, immutable" always;
+        }
+
+        # Health check
+        location /health {
+            access_log off;
+            add_header Content-Type text/plain;
+            return 200 "healthy\n";
+        }
+
+        # Deny hidden files
+        location ~ /\. {
+            deny all;
+        }
+    }
+
+---
+# Secret for TLS certificates (self-signed for local development)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: wajibika-tls
+  namespace: wajibika-mazingira
+type: kubernetes.io/tls
+data:
+  # These are placeholder values - replace with actual cert/key
+  # Generate with: openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt
+  tls.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUN1akNDQWFvQ0NRQ0dHSUd6a3g4L1RBREFWQ0czSHVPY0YxWHZVMjl5YnVxYkg4Y2o3TVlJZEkwRW5WOGg4PSoNCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0=
+  tls.key: LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JSUV2QUlCQURBTkJna3Foa2lHOXcwQkFRRUZBQVNDQktZd2dna2lBZ0VBQU9DQktkQURDQllnaWtnaGtpRzljDQowQkJRRUZBQVNDQktZd2dna2lBZ0VBQU9DQktkQURDQllnaWtnaGtpRzljMEJCUUVGQUFTQ0JLWXdnZ2tpQWdFQQ0KLS0tLS1FTkQgUFJJVkFURSBLRVktLS0tLQ==
+
+---
+# HorizontalPodAutoscaler for Frontend
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: wajibika-frontend-hpa
+  namespace: wajibika-mazingira
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: wajibika-frontend
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 50
+        periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 30
+
+---
+# HorizontalPodAutoscaler for Backend
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: wajibika-server-hpa
+  namespace: wajibika-mazingira
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: wajibika-server
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 75
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 85
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 50
+        periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 30
+
+---
+# ServiceMonitor for Prometheus monitoring (optional)
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: wajibika-monitor
+  namespace: wajibika-mazingira
+spec:
+  selector:
+    matchLabels:
+      app: wajibika-frontend
+  endpoints:
+  - port: http
+    interval: 30s

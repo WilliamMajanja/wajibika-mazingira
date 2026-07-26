@@ -1,0 +1,28 @@
+FROM node:20.18-alpine
+
+WORKDIR /app
+
+# Create non-root user
+RUN addgroup -g 1001 -S appgroup && \
+    adduser -S appuser -u 1001 -G appgroup
+
+# Copy server package files
+COPY server/package*.json ./
+
+# Install production dependencies only
+RUN npm ci --omit=dev && npm cache clean --force
+
+# Copy server code
+COPY server/index.js .
+
+# Set ownership
+RUN chown -R appuser:appgroup /app
+
+USER appuser
+
+EXPOSE 4001
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD wget --quiet --tries=1 --spider http://localhost:4001/health || exit 1
+
+CMD ["node", "--max-old-space-size=512", "index.js"]

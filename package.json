@@ -1,0 +1,60 @@
+{
+  "name": "wajibika-mazingira",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "author": "William Majanja",
+  "description": "An AI-powered environmental conservation and carbon credit sequestering platform with carbon token pricing and community governance. A minima PiNet OS project.",
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "dev:all": "concurrently -n main,dev,maps,wallet,reporter -c green,blue,yellow,magenta,cyan \"npm run dev\" \"npm run dev --workspace=@wajibika/land-developer\" \"npm run dev --workspace=@wajibika/conservation-map\" \"npm run dev --workspace=@wajibika/carbon-wallet\" \"npm run dev --workspace=@wajibika/community-reporter\"",
+    "predev:all": "lsof -ti :5173-5177 2>/dev/null | xargs -r kill 2>/dev/null; echo 'cleaned ports 5173-5177'",
+    "build": "vite build && node -e \"require('fs').copyFileSync('dist/index.html','dist/404.html')\"",
+    "build:all": "npm run build --workspaces --if-present",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/ --ext .ts,.tsx --max-warnings 50",
+    "lint:typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "dompurify": "^3.4.10",
+    "html2pdf.js": "^0.14.0",
+    "marked": "^12.0.2",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-markdown": "^10.1.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@vitejs/plugin-react": "^6.0.0",
+    "autoprefixer": "^10.5.2",
+    "concurrently": "^10.0.3",
+    "esbuild": "^0.28.1",
+    "eslint": "^10.5.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.3",
+    "jsdom": "^29.0.2",
+    "lightningcss": "^1.32.0",
+    "postcss": "^8.5.16",
+    "tailwindcss": "^3.4.19",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.62.0",
+    "vite": "^8.0.8",
+    "vitest": "^4.1.4"
+  }
+}

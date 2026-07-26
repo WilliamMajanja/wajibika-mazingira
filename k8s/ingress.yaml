@@ -1,0 +1,98 @@
+---
+# Ingress for k3s with Traefik
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: wajibika-ingress
+  namespace: wajibika-mazingira
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    # Security headers via middleware
+    traefik.ingress.kubernetes.io/router.middlewares: wajibika-mazingira-security-headers@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+  - hosts:
+    - mazingira.local
+    secretName: wajibika-tls
+  rules:
+  - host: mazingira.local
+    http:
+      paths:
+      - path: /wajibika-mazingira
+        pathType: Prefix
+        backend:
+          service:
+            name: wajibika-frontend
+            port:
+              number: 80
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: wajibika-server
+            port:
+              number: 4001
+
+---
+# Traefik Middleware for security headers
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: security-headers
+  namespace: wajibika-mazingira
+spec:
+  headers:
+    frameDeny: true
+    sslRedirect: true
+    sslHost: mazingira.local
+    sslProxyHeaders:
+      X-Forwarded-Proto: https
+    contentTypeNosniff: true
+    browserXssFilter: true
+    customRequestHeaders:
+      X-Powered-By: ""
+    customResponseHeaders:
+      X-Content-Type-Options: "nosniff"
+      X-Frame-Options: "SAMEORIGIN"
+      X-XSS-Protection: "1; mode=block"
+      Referrer-Policy: "strict-origin-when-cross-origin"
+
+---
+# NetworkPolicy for security
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: wajibika-network-policy
+  namespace: wajibika-mazingira
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: wajibika-mazingira
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: wajibika-mazingira
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+  - to:
+    - podSelector: {}
+    ports:
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 53

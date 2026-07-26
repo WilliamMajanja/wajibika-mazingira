@@ -1,0 +1,15 @@
+{
+  "plugins": [
+    "@qvac/sdk/llamacpp-completion/plugin"
+  ],
+  "serve": {
+    "models": {
+      "qvac-model": {
+        "model": "QWEN3_1_7B_INST_Q4",
+        "default": true,
+        "preload": true,
+        "config": { "ctx_size": 4096, "tools": true }
+      }
+    }
+  }
+}

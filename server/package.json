@@ -1,0 +1,20 @@
+{
+  "name": "wajibika-server",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.5.2",
+    "helmet": "^8.0.0",
+    "morgan": "^1.10.0",
+    "pdf-lib": "^1.17.1"
+  }
+}
