@@ -29,3 +29,16 @@ dist-ssr
 
 # External project directories
 Zedd-Weather-main/
+
+# Python bytecode
+__pycache__/
+*.pyc
+
+# Test results
+test-results/
+
+# Package lock for server (separate)
+server/package-lock.json
+
+# QVAC related
+qvac/
